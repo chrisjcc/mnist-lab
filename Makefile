@@ -164,6 +164,8 @@ evaluate-mve:
 generate-hf-cards:
 	$(PYTHON) scripts/release_to_hf.py --card-only $(ARGS)
 
+hf-card: generate-hf-cards
+
 publish-hf-cards:
 	$(PYTHON) scripts/release_to_hf.py --publish-cards $(ARGS)
 
@@ -172,6 +174,8 @@ hf-upload:
 
 hf-inference:
 	$(PYTHON) scripts/hf_inference.py $(ARGS)
+
+hf-infer: hf-inference
 
 publish-hf-release:
 	@echo "=========================================================="
@@ -190,6 +194,8 @@ publish-hf-release:
 		--dataset-repo $(DATASET_REPO) \
 		--release-tag "$$RELEASE_TAG" $(ARGS)
 
+hf-release: publish-hf-release
+
 # ------------------------------------------------------------
 # 5. Interactive Demo App & Docker Space
 # ------------------------------------------------------------
@@ -199,6 +205,8 @@ app-run:
 
 run-app:
 	$(STREAMLIT) run app/app.py $(ARGS)
+
+app: app-run
 
 docker-build:
 	docker build -t $(APP_IMAGE) .

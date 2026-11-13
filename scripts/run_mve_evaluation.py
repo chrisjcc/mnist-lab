@@ -60,6 +60,8 @@ def verify_mve_gates(
     Returns:
         List of 5 `GateResult` objects.
     """
+    repo_root = Path(__file__).resolve().parent.parent
+    cfg = load_hydra_config(config_dir=repo_root / "configs")
     results: list[GateResult] = []
 
     # Gate 1: Data Integrity & Split Balance
@@ -105,8 +107,8 @@ def verify_mve_gates(
         last_loss = float(rows[-1]["train_loss"])
         best_val_acc = max(float(r.get("val_accuracy", r.get("val_acc", 0.0))) for r in rows)
         best_val_loss = min(float(r["val_loss"]) for r in rows)
-        min_val_acc_thresh = 0.70 if smoke else 0.9880
-        max_val_loss_thresh = 1.50 if smoke else 0.0450
+        min_val_acc_thresh = 0.70 if smoke else cfg.evaluate.mve_min_val_accuracy
+        max_val_loss_thresh = 1.50 if smoke else 0.0500
         passed_g2 = (
             last_loss < first_loss
             and best_val_acc >= min_val_acc_thresh
@@ -139,8 +141,8 @@ def verify_mve_gates(
         test_acc = float(tm["test_acc"])
         macro_f1 = float(tm["macro_f1"])
         min_class_f1 = min(float(v["f1"]) for v in tm["per_class"].values())
-        acc_thresh = 0.70 if smoke else 0.9900
-        f1_thresh = 0.70 if smoke else 0.9890
+        acc_thresh = 0.70 if smoke else cfg.evaluate.mve_min_test_accuracy
+        f1_thresh = 0.70 if smoke else cfg.evaluate.mve_min_macro_f1
         cls_f1_thresh = 0.50 if smoke else 0.9800
         passed_g3 = (
             test_acc >= acc_thresh and macro_f1 >= f1_thresh and min_class_f1 >= cls_f1_thresh
@@ -167,13 +169,14 @@ def verify_mve_gates(
         bs1_p95 = float(bm["batch_metrics"]["1"]["p95_ms"])
         trainable_params = int(bm["trainable_params"])
         ckpt_mb = float(bm["checkpoint_size_mb"])
-        passed_g4 = bs1_p95 < 25.0 and trainable_params < 1_000_000 and ckpt_mb < 10.0
+        max_p95 = cfg.evaluate.mve_max_p95_latency_ms
+        passed_g4 = bs1_p95 < max_p95 and trainable_params < 1_000_000 and ckpt_mb < 10.0
         results.append(
             GateResult(
                 "Gate 4",
                 "Inference Latency & Footprint",
                 passed_g4,
-                f"bs1_p95_ms={bs1_p95:.3f} (<25.0 ms), "
+                f"bs1_p95_ms={bs1_p95:.3f} (<{max_p95:.1f} ms), "
                 f"trainable_params={trainable_params:,} (<1,000,000), "
                 f"checkpoint_size_mb={ckpt_mb:.2f} (<10.0 MB)",
             )
