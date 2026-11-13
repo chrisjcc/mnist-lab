@@ -153,18 +153,12 @@ optimizer.step()                             # 5. Optimizer Step: update weights
 ```
 
 ```mermaid
-sequenceDiagram
-    participant Data as DataLoader Mini-Batch
-    participant Opt as Optimizer Adam
-    participant Model as MNISTConvNet Weights
-    participant Loss as CrossEntropyLoss
-
-    Data->>Model: Pass images [B, 1, 28, 28] and labels [B]
-    Opt->>Model: Step 1 - optimizer.zero_grad resets param.grad to None
-    Model->>Model: Step 2 - logits = model(images) computes [B, 10] scores
-    Model->>Loss: Step 3 - loss = criterion(logits, labels) computes scalar error
-    Loss->>Model: Step 4 - loss.backward computes gradients in param.grad
-    Opt->>Model: Step 5 - optimizer.step updates weights using param.grad and lr
+flowchart TD
+    Batch["Mini-Batch from DataLoader: images and labels"] --> Step1["Step 1: optimizer.zero_grad - Reset param.grad to None"]
+    Step1 --> Step2["Step 2: logits = model(images) - Forward pass computes 10 class scores"]
+    Step2 --> Step3["Step 3: loss = criterion(logits, labels) - Compute CrossEntropyLoss"]
+    Step3 --> Step4["Step 4: loss.backward() - Backpropagation computes param.grad"]
+    Step4 --> Step5["Step 5: optimizer.step() - Update model weights using param.grad"]
 ```
 
 ---
