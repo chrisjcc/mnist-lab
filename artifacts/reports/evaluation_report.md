@@ -22,10 +22,11 @@
 | 4 | 0.0606 | 98.16% | 0.0401 | 98.75% | 0.001000 | 21.83 |
 | 5 | 0.0546 | 98.31% | 0.0430 | 98.83% | 0.001000 | 21.74 |
 
-### Training Curves
+### Training & Validation Curves
 
-- Loss Curve: `plots/loss_curve.png`
-- Accuracy Curve: `plots/accuracy_curve.png`
+| Training vs. Validation Loss | Training vs. Validation Accuracy |
+| :---: | :---: |
+| ![Loss Curve](plots/loss_curve.png) | ![Accuracy Curve](plots/accuracy_curve.png) |
 
 ---
 
@@ -56,6 +57,12 @@
 | **Digit 7** | 0.9883 | 0.9835 | 0.9859 | 1028 |
 | **Digit 8** | 0.9887 | 0.9846 | 0.9866 | 974 |
 | **Digit 9** | 0.9940 | 0.9802 | 0.9870 | 1009 |
+
+### Confusion Matrix & Sample Predictions
+
+| Held-Out Test Set Confusion Matrix (10x10) | Sample Predictions on Test Digits (4x4) |
+| :---: | :---: |
+| ![Confusion Matrix](plots/confusion_matrix.png) | ![Sample Predictions](plots/sample_predictions.png) |
 
 ---
 
