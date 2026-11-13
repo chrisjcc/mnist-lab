@@ -1,0 +1,36 @@
+{
+  "device": "cpu",
+  "trainable_params": 421834,
+  "total_params": 421834,
+  "checkpoint_size_mb": 4.8516,
+  "safetensors_size_mb": 1.6114,
+  "peak_cuda_memory_mb": null,
+  "warmup_runs": 10,
+  "timed_runs": 50,
+  "batch_metrics": {
+    "1": {
+      "mean_ms": 0.33,
+      "std_ms": 0.0271,
+      "p50_ms": 0.3275,
+      "p95_ms": 0.3724,
+      "p99_ms": 0.3948,
+      "samples_per_sec": 3030.46
+    },
+    "32": {
+      "mean_ms": 4.4055,
+      "std_ms": 0.6533,
+      "p50_ms": 4.1506,
+      "p95_ms": 6.1099,
+      "p99_ms": 6.344,
+      "samples_per_sec": 7263.71
+    },
+    "128": {
+      "mean_ms": 11.9827,
+      "std_ms": 0.4178,
+      "p50_ms": 11.8878,
+      "p95_ms": 12.6492,
+      "p99_ms": 13.6858,
+      "samples_per_sec": 10682.06
+    }
+  }
+}

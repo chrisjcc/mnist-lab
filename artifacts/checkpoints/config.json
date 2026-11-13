@@ -1,0 +1,23 @@
+{
+  "architectures": [
+    "MNISTConvNet"
+  ],
+  "model_type": "mnist_cnn",
+  "in_channels": 1,
+  "conv_channels": [
+    32,
+    64
+  ],
+  "kernel_size": 3,
+  "dropout": 0.25,
+  "hidden_dim": 128,
+  "num_classes": 10,
+  "normalization": {
+    "mean": 0.1307,
+    "std": 0.3081
+  },
+  "best_epoch": 5,
+  "best_val_accuracy": 0.9883333333333333,
+  "best_val_loss": 0.04297285906473795,
+  "trainable_parameters": 421834
+}
