@@ -93,6 +93,7 @@ make app
 ## 📚 Documentation Index
 
 - [**Step-by-Step User Guide (`docs/user_guide.md`)**](docs/user_guide.md): Comprehensive 9-part guide covering setup, data preprocessing, Hydra training, W&B tracking, evaluation/benchmarking, reporting, HF Hub upload/inference, and Docker Space deployment.
+- [**PyTorch Neural Network & Training Loop Tutorial (`docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md`)**](docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md): Beginner-friendly guide to Feedforward (MLP) and Convolutional Neural Networks (CNNs) with a line-by-line annotated walkthrough of the PyTorch training loop in `src/mnist_pipeline/train.py`.
 - [**MVE Baseline Study (`docs/experiments/mve_baseline_study.md`)**](docs/experiments/mve_baseline_study.md): Reproducible baseline instructions, acceptance gate adjudication, training curves, and test evaluation/benchmark tables.
 - [**Model Card (`docs/model_card.md`)**](docs/model_card.md): Architecture details, training hyperparameters, per-class evaluation metrics, and latency benchmarks.
 - [**Dataset Card (`docs/dataset_card.md`)**](docs/dataset_card.md): Dataset provenance, normalization formula, and stratified class distribution across splits.
