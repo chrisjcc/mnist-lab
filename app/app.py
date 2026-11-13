@@ -123,23 +123,30 @@ def run_app() -> None:
     with tab_draw:
         st.markdown("Draw a single digit (`0`–`9`) in **white ink on the black canvas** below:")
         try:
+            import inspect
+            from typing import Any
+
             from streamlit_drawable_canvas import st_canvas
 
-            stroke_width = st.slider("Brush Stroke Width", min_value=8, max_value=28, value=18)
-            canvas_result = st_canvas(
-                fill_color="rgba(255, 255, 255, 1.0)",
-                stroke_width=stroke_width,
-                stroke_color="#FFFFFF",
-                background_color="#000000",
-                height=280,
-                width=280,
-                drawing_mode="freedraw",
-                key="mnist_draw_canvas",
-            )
+            stroke_width = st.slider("Brush Stroke Width", min_value=8, max_value=28, value=14)
+            canvas_kwargs: dict[str, Any] = {
+                "fill_color": "rgba(255, 255, 255, 1.0)",
+                "stroke_width": stroke_width,
+                "stroke_color": "#FFFFFF",
+                "background_color": "#000000",
+                "height": 280,
+                "width": 280,
+                "drawing_mode": "freedraw",
+                "key": "mnist_draw_canvas",
+            }
+            if "return_image_data" in inspect.signature(st_canvas).parameters:
+                canvas_kwargs["return_image_data"] = True
+
+            canvas_result = st_canvas(**canvas_kwargs)
             if canvas_result.image_data is not None:
                 img_rgba = np.asarray(canvas_result.image_data, dtype=np.uint8)
-                if int(img_rgba[:, :, :3].max()) > 10:
-                    pil_drawn = Image.fromarray(img_rgba, mode="RGBA").convert("L")
+                if int(np.max(img_rgba[:, :, :3])) > 10:
+                    pil_drawn = Image.fromarray(img_rgba, mode="RGBA")
                     pred_res = predict_pil_image(
                         model=model,
                         image=pil_drawn,
@@ -150,6 +157,8 @@ def run_app() -> None:
                     _render_prediction_panel(pred_res)
                 else:
                     st.info("Draw a digit on the canvas above to run real-time inference.")
+            else:
+                st.info("Draw a digit on the canvas above to run real-time inference.")
         except Exception as exc:
             st.warning(
                 f"Interactive drawing canvas unavailable ({exc}). "
