@@ -1,0 +1,99 @@
+stages:
+  preprocess:
+    cmd: python scripts/preprocess.py
+    deps:
+      - scripts/preprocess.py
+      - src/mnist_pipeline/data.py
+      - configs/data/mnist.yaml
+    params:
+      - data.val_fraction
+      - data.mean
+      - data.std
+      - data.seed
+    outs:
+      - data/processed/train.pt
+      - data/processed/val.pt
+      - data/processed/test.pt
+      - data/processed/split_metadata.json
+
+  train:
+    cmd: python scripts/train.py
+    deps:
+      - scripts/train.py
+      - src/mnist_pipeline/train.py
+      - src/mnist_pipeline/model.py
+      - src/mnist_pipeline/tracker.py
+      - data/processed/train.pt
+      - data/processed/val.pt
+      - configs/model/cnn.yaml
+      - configs/train/default.yaml
+    params:
+      - model.conv_channels
+      - model.dropout
+      - model.hidden_dim
+      - train.epochs
+      - train.lr
+      - train.weight_decay
+      - train.optimizer
+      - train.seed
+    outs:
+      - artifacts/checkpoints/checkpoint_best.pt
+      - artifacts/checkpoints/checkpoint_last.pt
+      - artifacts/checkpoints/model.safetensors
+      - artifacts/checkpoints/config.json
+      - artifacts/reports/train_history.csv
+      - artifacts/reports/environment.json
+
+  evaluate:
+    cmd: python scripts/evaluate.py
+    deps:
+      - scripts/evaluate.py
+      - src/mnist_pipeline/evaluate.py
+      - src/mnist_pipeline/metrics.py
+      - artifacts/checkpoints/checkpoint_best.pt
+      - data/processed/test.pt
+      - configs/evaluate/default.yaml
+    params:
+      - evaluate.batch_size
+    metrics:
+      - artifacts/evaluation/test_metrics.json:
+          cache: false
+    outs:
+      - artifacts/evaluation/classification_report.txt
+      - artifacts/evaluation/confusion_matrix.csv
+
+  benchmark:
+    cmd: python scripts/benchmark.py
+    deps:
+      - scripts/benchmark.py
+      - src/mnist_pipeline/evaluate.py
+      - artifacts/checkpoints/checkpoint_best.pt
+      - configs/evaluate/default.yaml
+    params:
+      - evaluate.benchmark_warmup_runs
+      - evaluate.benchmark_timed_runs
+      - evaluate.benchmark_batch_sizes
+    metrics:
+      - artifacts/benchmarks/benchmark_metrics.json:
+          cache: false
+
+  report:
+    cmd: python scripts/generate_report.py
+    deps:
+      - scripts/generate_report.py
+      - src/mnist_pipeline/reporting.py
+      - artifacts/reports/train_history.csv
+      - artifacts/evaluation/test_metrics.json
+      - artifacts/evaluation/confusion_matrix.csv
+      - artifacts/benchmarks/benchmark_metrics.json
+      - templates/model_card_template.md
+      - templates/dataset_card_template.md
+    plots:
+      - artifacts/reports/plots/loss_curve.png
+      - artifacts/reports/plots/accuracy_curve.png
+      - artifacts/reports/plots/confusion_matrix.png
+      - artifacts/reports/plots/sample_predictions.png
+    outs:
+      - artifacts/reports/evaluation_report.md
+      - docs/model_card.md
+      - docs/dataset_card.md

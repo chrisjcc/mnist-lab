@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mnist-pipeline"
+version = "0.1.0"
+description = "Reproducible, configuration-driven PyTorch MNIST image classification pipeline with DVC, Hydra, W&B, and Hugging Face Hub integration."
+readme = "README.md"
+authors = [{ name = "Christian Contreras-Campana" }]
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+dependencies = [
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.4.0",
+    "matplotlib>=3.8.0",
+    "pandas>=2.1.0",
+    "hydra-core>=1.3.2",
+    "omegaconf>=2.3.0",
+    "dvc>=3.50.0",
+    "wandb>=0.16.0",
+    "huggingface-hub>=0.25.0",
+    "safetensors>=0.4.3",
+    "pillow>=10.2.0",
+    "jinja2>=3.1.3",
+    "python-dotenv>=1.0.1",
+    "PyYAML>=6.0.1",
+]
+
+[project.optional-dependencies]
+training = [
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "wandb>=0.16.0",
+]
+ui = [
+    "streamlit>=1.32.0",
+    "streamlit-drawable-canvas>=0.9.3",
+    "pandas>=2.1.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "types-PyYAML",
+]
+all = [
+    "torch>=2.2.0",
+    "torchvision>=0.17.0",
+    "wandb>=0.16.0",
+    "streamlit>=1.32.0",
+    "streamlit-drawable-canvas>=0.9.3",
+    "pandas>=2.1.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+    "types-PyYAML",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "D"]
+ignore = ["E501", "D100", "D104"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+exclude = ["build/", "dist/"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+pythonpath = [".", "src"]
+addopts = "-v --strict-markers"

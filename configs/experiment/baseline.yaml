@@ -1,0 +1,18 @@
+# @package _global_
+data:
+  batch_size: 128
+  val_fraction: 0.1
+  seed: 42
+
+model:
+  conv_channels: [32, 64]
+  hidden_dim: 128
+  dropout: 0.25
+
+train:
+  epochs: 5
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: adam
+  seed: 42
+  deterministic: true

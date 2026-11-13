@@ -1,0 +1,10 @@
+enabled: true
+project: mnist-classification
+entity: null
+mode: disabled
+run_name: null
+tags:
+  - mnist
+  - cnn
+  - baseline
+log_model: false
