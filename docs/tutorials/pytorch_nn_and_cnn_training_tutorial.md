@@ -26,11 +26,11 @@ In our MNIST project, the goal is **10-class image classification**:
 
 ```mermaid
 flowchart LR
-    A["Input Image Batch<br/>images: [B, 1, 28, 28]"] --> B["CNN Feature Extractor<br/>(Edges, Curves, Loops)"]
-    B --> C["Feedforward Classifier (MLP)<br/>(Combines Visual Clues)"]
-    C --> D["Raw Class Scores (Logits)<br/>logits: [B, 10]"]
-    D --> E["CrossEntropyLoss<br/>Compare logits vs. labels [B]"]
-    E --> F["loss.backward() & optimizer.step()<br/>Update Weights to Improve"]
+    A["Input Image Batch: images [B, 1, 28, 28]"] --> B["CNN Feature Extractor (Edges, Curves, Loops)"]
+    B --> C["Feedforward Classifier MLP (Combines Visual Clues)"]
+    C --> D["Raw Class Scores: logits [B, 10]"]
+    D --> E["CrossEntropyLoss: Compare logits vs. labels [B]"]
+    E --> F["loss.backward and optimizer.step: Update Weights"]
 ```
 
 At the start of training, the network's weights (adjustable numbers inside its layers) are initialized randomly, so its 10 output scores are pure guesswork (~10% accuracy). **Training** is the iterative process of showing the network batches of labeled images, measuring how wrong its guesses are, and slightly nudging its weights so it makes better guesses next time.
@@ -154,17 +154,17 @@ optimizer.step()                             # 5. Optimizer Step: update weights
 
 ```mermaid
 sequenceDiagram
-    participant Data as DataLoader (Mini-Batch)
-    participant Opt as Optimizer (Adam)
-    participant Model as MNISTConvNet (Weights θ)
+    participant Data as DataLoader Mini-Batch
+    participant Opt as Optimizer Adam
+    participant Model as MNISTConvNet Weights
     participant Loss as CrossEntropyLoss
 
-    Data->>Model: images [B, 1, 28, 28], labels [B]
-    Opt->>Model: 1. optimizer.zero_grad() (Reset θ.grad = None)
-    Model->>Model: 2. logits = model(images) (Forward Pass -> [B, 10])
-    Model->>Loss: 3. loss = criterion(logits, labels) (Scalar Error)
-    Loss->>Model: 4. loss.backward() (Backprop populates θ.grad)
-    Opt->>Model: 5. optimizer.step() (Update θ ← θ - lr * update(θ.grad))
+    Data->>Model: Pass images [B, 1, 28, 28] and labels [B]
+    Opt->>Model: Step 1 - optimizer.zero_grad resets param.grad to None
+    Model->>Model: Step 2 - logits = model(images) computes [B, 10] scores
+    Model->>Loss: Step 3 - loss = criterion(logits, labels) computes scalar error
+    Loss->>Model: Step 4 - loss.backward computes gradients in param.grad
+    Opt->>Model: Step 5 - optimizer.step updates weights using param.grad and lr
 ```
 
 ---
