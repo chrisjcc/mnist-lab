@@ -33,18 +33,31 @@ Full experimental protocol, training curves, confusion matrix, and per-class eva
 | **Batched Throughput (`batch_size=128`)** | $\ge 1,000\text{ samples/s}$ | **`10,465.1 samples/s`** | ✅ **PASS** |
 | **Model Footprint (`MNISTConvNet`)** | $< 1\text{M params} / < 10\text{ MB}$ | **`421,834 params` (`1.61 MB` SafeTensors)** | ✅ **PASS** |
 
-| Training vs. Validation Loss | Training vs. Validation Accuracy | Held-Out Test Confusion Matrix |
-| :---: | :---: | :---: |
-| ![Loss Curve](docs/experiments/figures/loss_curve.png) | ![Accuracy Curve](docs/experiments/figures/accuracy_curve.png) | ![Confusion Matrix](docs/experiments/figures/confusion_matrix.png) |
+---
+
+## 🔑 Required & Recommended Accounts
+
+To run the full suite of capabilities coded in this repository (tracking experiments, uploading models/datasets, and deploying the interactive demo Space), you will need accounts and credentials for the following platforms:
+
+| Platform | Required For | What It Enables in the Codebase | Setup & Required Credentials |
+| :--- | :--- | :--- | :--- |
+| **[GitHub](https://github.com/)** | **Core Codebase & CI/CD** | Repository hosting, issue/PR tracking, GitHub Actions CI workflows (`ci.yml`), automated Space deployment (`deploy-hf-demo.yml`), and container image publishing via GHCR (`docker-publish.yml`). | 1. Sign up at [github.com](https://github.com/)<br>2. Set up standard SSH/HTTPS access.<br>3. In your repo, configure GitHub Actions Secrets (`HF_TOKEN`) for deployment workflows. |
+| **[Hugging Face](https://huggingface.co/)** | **Hub Releases & Spaces Demo** | Uploading trained SafeTensors weights, metrics, and Model/Dataset Cards (`make hf-upload`, `make publish-hf-release`), remote model downloading (`make hf-infer`), and hosting the interactive Streamlit Docker Space (`app/`). | 1. Sign up at [huggingface.co](https://huggingface.co/)<br>2. Generate a User Access Token with **Write** permissions under **Settings -> Access Tokens**.<br>3. Export `HF_TOKEN=hf_...` in `.env` (and add it as a GitHub Actions secret for CI Space deployment).<br>4. Create your target Space (e.g. `username/mnist-lab-demo`) with SDK set to **Docker**. |
+| **[Weights & Biases (W&B)](https://wandb.ai/)** | **Experiment Tracking** | Live visualization of training/validation loss and accuracy curves, system telemetry (GPU/CPU/RAM), hyperparameter logging, and model artifact checkpoint versioning (`src/mnist_pipeline/tracker.py`). | 1. Sign up at [wandb.ai](https://wandb.ai/)<br>2. Retrieve your API key from **User Settings -> API Keys**.<br>3. Set `WANDB_API_KEY=...` and `WANDB_ENTITY=...` in your `.env`.<br>*(Note: Set `wandb.mode=online` when running training to stream live metrics).* |
+
+> **Environment Configuration**: Copy `.env.example` to `.env` and fill in your keys:
+> ```bash
+> cp .env.example .env
+> ```
 
 ---
 
 ## 🚀 Quickstart
 
 ```bash
-# 1. Create virtual environment and install dependencies
-python3 -m venv .venv
-source .venv/bin/activate
+# 1. Create and activate a Conda environment (or Python venv) and install dependencies
+conda create -n mnist-lab python=3.11 -y
+conda activate mnist-lab
 make setup
 
 # 2. Run zero-budget synthetic smoke check (< 1s)

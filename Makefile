@@ -13,13 +13,21 @@ endif
 # ------------------------------------------------------------
 
 VENV ?= .venv
-PYTHON := $(if $(wildcard $(VENV)/bin/python),$(VENV)/bin/python,python3)
-PIP := $(if $(wildcard $(VENV)/bin/pip),$(VENV)/bin/pip,pip)
-RUFF := $(if $(wildcard $(VENV)/bin/ruff),$(VENV)/bin/ruff,ruff)
-MYPY := $(if $(wildcard $(VENV)/bin/mypy),$(VENV)/bin/mypy,mypy)
-PYTEST := $(if $(wildcard $(VENV)/bin/pytest),$(VENV)/bin/pytest,pytest)
-DVC := $(if $(wildcard $(VENV)/bin/dvc),$(VENV)/bin/dvc,dvc)
-STREAMLIT := $(if $(wildcard $(VENV)/bin/streamlit),$(VENV)/bin/streamlit,streamlit)
+ifneq ($(and $(CONDA_PREFIX),$(filter-out base,$(CONDA_DEFAULT_ENV))),)
+BIN_DIR := $(CONDA_PREFIX)/bin
+else ifneq ($(wildcard $(VENV)/bin/python),)
+BIN_DIR := $(VENV)/bin
+else
+BIN_DIR :=
+endif
+
+PYTHON := $(if $(BIN_DIR),$(BIN_DIR)/python,python3)
+PIP := $(if $(BIN_DIR),$(BIN_DIR)/pip,pip)
+RUFF := $(if $(BIN_DIR),$(BIN_DIR)/ruff,ruff)
+MYPY := $(if $(BIN_DIR),$(BIN_DIR)/mypy,mypy)
+PYTEST := $(if $(BIN_DIR),$(BIN_DIR)/pytest,pytest)
+DVC := $(if $(BIN_DIR),$(BIN_DIR)/dvc,dvc)
+STREAMLIT := $(if $(BIN_DIR),$(BIN_DIR)/streamlit,streamlit)
 
 # Deployment & Container Configuration
 APP_IMAGE ?= mnist-lab-app

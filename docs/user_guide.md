@@ -33,9 +33,17 @@ git clone https://github.com/chrisjcc/mnist-lab.git
 cd mnist-lab
 ```
 
-### Step 1.2: Create a Virtual Environment and Install Dependencies
+### Step 1.2: Create an Isolated Environment and Install Dependencies
 
-Using a local `.venv` (automatically detected by the `Makefile`):
+**Option A (Recommended — Conda)**:
+
+```bash
+conda create -n mnist-lab python=3.11 -y
+conda activate mnist-lab
+make setup
+```
+
+**Option B (Python `venv`)**:
 
 ```bash
 python3 -m venv .venv
@@ -43,12 +51,14 @@ source .venv/bin/activate
 make setup
 ```
 
+> **Note**: The [`Makefile`](../Makefile) automatically detects an active Conda environment (`CONDA_PREFIX`) or a local `.venv` directory.
+
 What `make setup` executes under the hood:
 
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install -e ".[dev]"
+pip install -e ".[all]"
 ```
 
 ### Step 1.3: Configure Optional Environment Variables
