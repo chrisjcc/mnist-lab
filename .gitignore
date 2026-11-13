@@ -218,3 +218,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project Data, DVC Cache, Hydra Outputs, and W&B
+/data/
+/artifacts/
+/outputs/
+/multirun/
+/wandb/
+.dvc/cache/
+.dvc/tmp/
+.DS_Store
+

@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,training,ui]"
+
+      - name: Lint with ruff
+        run: |
+          ruff check src/ scripts/ tests/ app/
+          ruff format --check src/ scripts/ tests/ app/
+
+      - name: Type check with mypy
+        run: |
+          mypy src/
+
+      - name: Run fast zero-budget smoke evaluation (< 2.0s)
+        run: |
+          python scripts/run_smoke_eval.py
+
+      - name: Verify MVE decision gates (smoke mode)
+        run: |
+          python scripts/run_mve_evaluation.py --smoke
+
+      - name: Run unit tests with pytest
+        run: |
+          pytest tests/ -v

@@ -1,0 +1,8 @@
+repo_id: chrisjcc/mnist-cnn
+dataset_repo_id: chrisjcc/mnist-dataset
+revision: main
+private: false
+cache_dir: artifacts/hf_cache
+dry_run: false
+image_path: null
+sample_index: 0

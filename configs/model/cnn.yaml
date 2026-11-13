@@ -1,0 +1,9 @@
+name: mnist_cnn
+in_channels: 1
+conv_channels:
+  - 32
+  - 64
+kernel_size: 3
+dropout: 0.25
+hidden_dim: 128
+num_classes: 10

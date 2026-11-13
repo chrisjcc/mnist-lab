@@ -1,0 +1,28 @@
+data:
+  val_fraction: 0.1
+  mean: 0.1307
+  std: 0.3081
+  batch_size: 128
+  seed: 42
+
+model:
+  in_channels: 1
+  conv_channels: [32, 64]
+  kernel_size: 3
+  dropout: 0.25
+  hidden_dim: 128
+  num_classes: 10
+
+train:
+  epochs: 5
+  lr: 0.001
+  weight_decay: 0.0
+  optimizer: adam
+  seed: 42
+  deterministic: true
+
+evaluate:
+  batch_size: 256
+  benchmark_warmup_runs: 10
+  benchmark_timed_runs: 50
+  benchmark_batch_sizes: [1, 32, 128]

@@ -1,0 +1,23 @@
+defaults:
+  - data: mnist
+  - model: cnn
+  - train: default
+  - evaluate: default
+  - wandb: default
+  - hf: default
+  - _self_
+
+paths:
+  artifacts_dir: artifacts
+  checkpoints_dir: artifacts/checkpoints
+  evaluation_dir: artifacts/evaluation
+  benchmarks_dir: artifacts/benchmarks
+  reports_dir: artifacts/reports
+  plots_dir: artifacts/reports/plots
+  templates_dir: templates
+  docs_dir: docs
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
