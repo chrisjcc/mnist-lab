@@ -98,6 +98,9 @@ jobs:
           # ----------------------------------------------------------
 
           mkdir -p app
+          if [ -f ../app/__init__.py ]; then
+            cp ../app/__init__.py app/
+          fi
           cp ../app/app.py app/
           cp ../app/streamlit_app.py app/
           cp ../app/requirements.txt app/

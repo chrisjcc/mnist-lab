@@ -1,10 +1,11 @@
 ---
 title: MNIST Lab Digit Classifier Demo
-emoji: 🔢
+emoji: 🤖
 colorFrom: blue
 colorTo: indigo
 sdk: docker
 app_port: 8501
+pinned: false
 ---
 
 # MNIST-Lab Handwritten Digit Classifier 🔢

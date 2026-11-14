@@ -366,6 +366,44 @@ make sweep-smoke
 - Swept hyperparameters are dynamically formatted into Hydra overrides.
 - Non-swept parameters (e.g. `model.kernel_size`, `model.hidden_dim`, `data.mean`, `data.std`) continue to pull directly from `params.yaml` (SSoT).
 - Metrics (`train/loss`, `val/loss`, `val/accuracy`) are logged epoch-by-epoch, allowing Hyperband early stopping to prune underperforming runs.
+- **Trial Isolation & Checkpoint Preservation**: Every completed trial's checkpoint is isolated in `artifacts/sweeps/<sweep_id>/<run_id>/checkpoint_best.pt` along with its training history, preventing subsequent trials from overwriting earlier candidates.
+- **Local Sweep Ledger**: Each trial appends its metrics and hyperparameters to `artifacts/sweeps/<sweep_id>/trials.json`.
+
+#### 3. Local Sweep Reporting
+
+After or during a sweep, generate a Markdown leaderboard report detailing champion metrics, trial rankings, and hyperparameter sensitivity:
+
+```bash
+# Generate report for the most recent sweep
+make sweep-report
+
+# Or generate for a specific sweep ID
+make sweep-report SWEEP_ID=c6dont3r
+```
+
+Output:
+- `artifacts/sweeps/<sweep_id>/sweep_report.md`
+- `artifacts/reports/sweep_report.md` (mirrored canonical report)
+
+#### 4. Extracting and Promoting the Champion Model to Production & Hugging Face
+
+To extract the highest-performing model from a sweep, synchronize your pipeline's Single Source of Truth (`params.yaml`), run held-out test evaluation, update `docs/model_card.md`, and release to Hugging Face Hub:
+
+```bash
+# 1. Promote champion model locally:
+#    - Copies best checkpoint to artifacts/checkpoints/checkpoint_best.pt
+#    - Exports artifacts/checkpoints/model.safetensors & config.json
+#    - Updates params.yaml with champion hyperparameters (SSoT)
+#    - Runs evaluate.py and benchmark.py on test set
+#    - Updates docs/model_card.md with winning model metrics
+make sweep-promote SWEEP_ID=c6dont3r
+
+# 2. Promote champion model and publish directly to Hugging Face Hub:
+make sweep-publish-hf SWEEP_ID=c6dont3r
+
+# 3. Test Hugging Face staging in dry-run mode without network requests:
+make sweep-publish-hf SWEEP_ID=c6dont3r DRY_RUN=true
+```
 
 ---
 

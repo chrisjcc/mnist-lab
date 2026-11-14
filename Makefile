@@ -40,7 +40,7 @@ DATASET_REPO ?= chrisjcc/mnist-dataset
         data preprocess dvc-repro pipeline \
         train evaluate benchmark report \
         smoke-eval evaluate-mve \
-        sweep sweep-smoke \
+        sweep sweep-smoke sweep-report sweep-promote sweep-publish-hf \
         generate-hf-cards publish-hf-cards publish-hf-model publish-hf-dataset publish-hf-release \
         hf-upload hf-inference \
         app-run run-app docker-build docker-run
@@ -224,6 +224,15 @@ sweep:
 
 sweep-smoke:
 	$(PYTHON) scripts/run_sweep_trial.py --smoke --learning_rate 0.002 --dropout 0.3
+
+sweep-report:
+	$(PYTHON) scripts/promote_sweep.py --report-only $(if $(SWEEP_ID),--sweep-id $(SWEEP_ID),)
+
+sweep-promote:
+	$(PYTHON) scripts/promote_sweep.py $(if $(SWEEP_ID),--sweep-id $(SWEEP_ID),) $(if $(RUN_ID),--run-id $(RUN_ID),) --update-ssot
+
+sweep-publish-hf:
+	$(PYTHON) scripts/promote_sweep.py $(if $(SWEEP_ID),--sweep-id $(SWEEP_ID),) $(if $(RUN_ID),--run-id $(RUN_ID),) --update-ssot --publish-hf $(if $(filter true 1,$(DRY_RUN)),--dry-run,)
 
 # ------------------------------------------------------------
 # 5. Hugging Face Hub Integration
