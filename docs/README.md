@@ -40,9 +40,9 @@ Stored under [`docs/experiments/metrics/`](experiments/metrics/):
 
 ---
 
-## ⚙️ How These Reports & Results Are Generated
+## ⚙️ Quick Reference: Report & Artifact Generation
 
-The documents and figures above are generated directly by automated pipeline targets:
+The reports, plots, and cards in this directory are generated directly via automated pipeline targets:
 
 ```bash
 # 1. Generate local diagnostic figures, evaluation_report.md, and update model & dataset cards
@@ -51,12 +51,14 @@ make report
 # 2. Compile or refresh the local Markdown hyperparameter sweep report from trial ledgers
 make sweep-report SWEEP_ID=c6dont3r
 
-# 3. Promote champion model (updates params.yaml, checkpoint, runs evaluation & regenerates report)
+# 3. Promote champion model locally (updates checkpoint, params.yaml, test eval & model card)
 make sweep-promote SWEEP_ID=c6dont3r
 
-# 4. Promote and publish champion model directly to Hugging Face Hub
+# 4. Promote champion model and publish directly to Hugging Face Hub
 make sweep-publish-hf SWEEP_ID=c6dont3r
 ```
+
+> 📖 **Full Instructions**: For in-depth CLI options, output schemas, and pipeline DAG reproduction, see the [User Guide — Section 6: Generating Evaluation Reports & Visualizations](user_guide.md#6-generating-evaluation-reports-and-visualizations).
 
 ---
 

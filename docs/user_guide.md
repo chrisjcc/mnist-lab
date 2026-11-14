@@ -464,22 +464,62 @@ python scripts/run_mve_evaluation.py --smoke
 
 ## 6. Generating Evaluation Reports and Visualizations
 
-Generate all diagnostic figures, the consolidated Markdown evaluation report, and the rendered Hugging Face Model and Dataset Cards:
+This section details how empirical metrics, diagnostic plots, model/dataset cards, and hyperparameter sweep studies are generated and compiled across the pipeline.
+
+### Step 6.1: Generate Baseline Diagnostic Figures, Report & Cards (`make report`)
+
+Generate all diagnostic figures, the consolidated Markdown evaluation report, and the rendered Hugging Face Model and Dataset Cards from your latest local run:
 
 ```bash
 make report
 ```
 
-### Generated Visual & Documentation Artifacts
+What `make report` executes (`scripts/generate_report.py` via `mnist_pipeline.reporting.generate_all_reports()`):
+1. **`artifacts/reports/plots/loss_curve.png`**: Plots training vs. validation cross-entropy loss across epochs from `train_history.csv`.
+2. **`artifacts/reports/plots/accuracy_curve.png`**: Plots training vs. validation accuracy (%) across epochs.
+3. **`artifacts/reports/plots/confusion_matrix.png`**: Computes predictions on the 10,000 held-out test images and renders an annotated `10 × 10` confusion matrix heatmap.
+4. **`artifacts/reports/plots/sample_predictions.png`**: Runs inference on 16 test digits and renders a `4 × 4` grid with predicted labels, softmax confidence scores, and ground-truth values.
+5. **`artifacts/reports/evaluation_report.md`**: Assembles an executive summary, training progression table, test classification metrics table, CPU latency benchmark percentiles, and embeds all 4 diagnostic plots side-by-side.
+6. **`docs/model_card.md` & `docs/dataset_card.md`**: Jinja2-rendered Hugging Face Hub cards populated dynamically with empirical parameters and test metrics.
 
-1. `artifacts/reports/plots/loss_curve.png`: Training vs. validation cross-entropy loss across epochs.
-2. `artifacts/reports/plots/accuracy_curve.png`: Training vs. validation accuracy (%) across epochs.
-3. `artifacts/reports/plots/confusion_matrix.png`: Annotated `10 × 10` test set confusion matrix heatmap.
-4. `artifacts/reports/plots/sample_predictions.png`: `4 × 4` grid of held-out test images with predicted digit, confidence, and ground-truth label.
-5. `artifacts/reports/evaluation_report.md`: Executive summary, training progression table, test metrics table, and latency benchmark table.
-6. `docs/model_card.md` & `docs/dataset_card.md`: Jinja2-rendered Hugging Face Hub cards populated with empirical run metrics.
+### Step 6.2: Compile Hyperparameter Sweep Reports & Promote Champions
 
-To reproduce the entire DAG (`preprocess -> train -> evaluate -> benchmark -> report`) in one command:
+When optimizing hyperparameters with Weights & Biases Bayesian sweeps, dedicated targets compile trial ledgers into Markdown reports and promote champion candidates:
+
+```bash
+# 1. Compile or refresh the local Markdown sweep report from trial ledgers
+make sweep-report SWEEP_ID=c6dont3r
+
+# 2. Promote champion model locally:
+#    - Copies winning checkpoint to artifacts/checkpoints/checkpoint_best.pt
+#    - Exports artifacts/checkpoints/model.safetensors & config.json
+#    - Updates params.yaml with winning hyperparameters (SSoT synchronization)
+#    - Re-evaluates test metrics and re-runs latency benchmarks
+#    - Re-renders docs/model_card.md with winning empirical numbers
+make sweep-promote SWEEP_ID=c6dont3r
+
+# 3. Promote champion model and immediately release to Hugging Face Hub:
+make sweep-publish-hf SWEEP_ID=c6dont3r
+
+# 4. Dry-run staging without publishing to the network:
+make sweep-publish-hf SWEEP_ID=c6dont3r DRY_RUN=true
+```
+
+### Step 6.3: Curated Experiment Studies & Figures for GitHub (`docs/experiments/`)
+
+To preserve experimental findings for anyone browsing or cloning the repository—while keeping large binary weights off Git—completed studies, diagnostic figures, and summary metrics are curated under [`docs/experiments/`](experiments/):
+
+| Study / Directory | Document / Path | Contents |
+| :--- | :--- | :--- |
+| **Baseline Study** | [`docs/experiments/mve_baseline_study.md`](experiments/mve_baseline_study.md) | Minimum Viable Experiment (MVE-001) deterministic baseline & 5/5 acceptance criteria gates |
+| **Sweep Study** | [`docs/experiments/sweep_study.md`](experiments/sweep_study.md) | Bayesian sweep study (`c6dont3r`), 5-trial ranked leaderboard, champion metrics, and 5-epoch curves |
+| **Baseline Figures** | [`docs/experiments/figures/`](experiments/figures/) | Baseline loss/accuracy curves, confusion matrix, and sample predictions |
+| **Sweep Figures** | [`docs/experiments/figures/sweep/`](experiments/figures/sweep/) | Champion model 5-epoch loss/accuracy curves, confusion matrix, and sample predictions |
+| **Metrics Catalog** | [`docs/experiments/metrics/`](experiments/metrics/) | Summary JSONs: `test_metrics.json`, `benchmark_metrics.json`, `sweep_c6dont3r_trials.json` |
+
+### Step 6.4: Full End-to-End Pipeline Reproduction via DVC
+
+To reproduce the entire computational DAG (`preprocess -> train -> evaluate -> benchmark -> report`) in a single deterministic command:
 
 ```bash
 make dvc-repro
