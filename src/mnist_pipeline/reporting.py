@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import datetime
 import logging
 import os
 import tempfile
@@ -548,3 +549,199 @@ def generate_all_reports(
         "model_card": str(model_card),
         "dataset_card": str(dataset_card),
     }
+
+
+def generate_sweep_report(
+    sweep_id: str | None = None,
+    sweeps_dir: str | Path = "artifacts/sweeps",
+    output_path: str | Path | None = None,
+    project_name: str = "mnist-classification",
+    entity: str | None = None,
+) -> Path:
+    """Generate a Markdown sweep evaluation report comparing all trials.
+
+    Reads trial results from `<sweeps_dir>/<sweep_id>/trials.json`, ranks runs
+    by validation accuracy (and validation loss), highlights the champion model,
+    and formats a leaderboard table.
+
+    Args:
+        sweep_id: W&B sweep ID or local sweep identifier. If None, resolves the
+            most recently modified sweep in `sweeps_dir`.
+        sweeps_dir: Directory containing per-sweep trial runs and ledgers.
+        output_path: Path where the report should be saved. Defaults to
+            `artifacts/reports/sweep_report.md` (and also writes to
+            `<sweeps_dir>/<sweep_id>/sweep_report.md`).
+        project_name: W&B project name for URL attribution.
+        entity: W&B entity/organization for URL attribution.
+
+    Returns:
+        Path to the generated report file.
+
+    Raises:
+        FileNotFoundError: If no sweep directories or trials are found.
+        ValueError: If `trials.json` contains no trial records.
+    """
+    root_sweeps = Path(sweeps_dir)
+    resolved_sweep_id: str | None = sweep_id
+
+    if resolved_sweep_id is None:
+        if not root_sweeps.exists():
+            raise FileNotFoundError(
+                f"Sweeps directory '{root_sweeps}' does not exist. Run `make sweep` first."
+            )
+        candidate_dirs = [
+            d for d in root_sweeps.iterdir() if d.is_dir() and (d / "trials.json").exists()
+        ]
+        if not candidate_dirs:
+            raise FileNotFoundError(
+                f"No completed sweeps found in '{root_sweeps}'. Run `make sweep` first."
+            )
+        candidate_dirs.sort(key=lambda p: (p / "trials.json").stat().st_mtime, reverse=True)
+        resolved_sweep_dir = candidate_dirs[0]
+        resolved_sweep_id = resolved_sweep_dir.name
+    else:
+        resolved_sweep_dir = root_sweeps / resolved_sweep_id
+
+    trials_file = resolved_sweep_dir / "trials.json"
+    if not trials_file.exists():
+        raise FileNotFoundError(
+            f"Sweep trial ledger not found at '{trials_file}'. "
+            f"Ensure trials have executed under sweep '{resolved_sweep_id}'."
+        )
+
+    trials_raw = load_json(trials_file)
+    trials_data = trials_raw.get("trials", []) if isinstance(trials_raw, dict) else trials_raw
+    if not isinstance(trials_data, list) or not trials_data:
+        raise ValueError(f"No trial records found in '{trials_file}'.")
+
+    # Sort trials by validation accuracy descending, breaking ties with validation loss ascending
+    def sort_key(t: dict[str, Any]) -> tuple[float, float]:
+        val_acc = float(t.get("best_val_accuracy", 0.0))
+        val_loss = float(t.get("best_val_loss", 999.0))
+        return (-val_acc, val_loss)
+
+    ranked_trials = sorted(trials_data, key=sort_key)
+    champion = ranked_trials[0]
+
+    # Compute statistics
+    accs = [float(t.get("best_val_accuracy", 0.0)) for t in ranked_trials]
+    losses = [float(t.get("best_val_loss", 0.0)) for t in ranked_trials]
+    min_acc, max_acc, mean_acc = min(accs), max(accs), sum(accs) / len(accs)
+    min_loss, max_loss, mean_loss = min(losses), max(losses), sum(losses) / len(losses)
+
+    now_iso = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    # Construct W&B sweep link if entity provided or discoverable
+    resolved_entity = entity or os.environ.get("WANDB_ENTITY", "rl4aa")
+    resolved_project = project_name or os.environ.get("WANDB_PROJECT", "mnist-classification")
+    wandb_sweep_url = (
+        f"https://wandb.ai/{resolved_entity}/{resolved_project}/sweeps/{resolved_sweep_id}"
+    )
+
+    lines: list[str] = [
+        f"# 🧹 Hyperparameter Sweep Report: `{resolved_sweep_id}`",
+        "",
+        f"> **Generated at**: {now_iso}  ",
+        f"> **Project**: `{resolved_project}` | **Entity**: `{resolved_entity}` | **Total Trials**: {len(ranked_trials)}  ",
+        f"> **W&B Dashboard**: [{wandb_sweep_url}]({wandb_sweep_url})",
+        "",
+        "---",
+        "",
+        "## 🏆 Champion Model Overview",
+        "",
+        f"The best performing model identified during this sweep is trial **`{champion.get('run_name', champion.get('run_id'))}`**.",
+        "",
+        "| Metric / Property | Champion Value |",
+        "| :--- | :--- |",
+        f"| **Run ID** | `{champion.get('run_id')}` |",
+        f"| **Run Name** | `{champion.get('run_name')}` |",
+        f"| **Best Validation Accuracy** | **`{float(champion.get('best_val_accuracy', 0.0)):.4%}`** |",
+        f"| **Best Validation Loss** | **`{float(champion.get('best_val_loss', 0.0)):.4f}`** |",
+        f"| **Best Epoch** | `{champion.get('best_epoch')}` of `{champion.get('total_epochs', 5)}` |",
+        f"| **Learning Rate** | `{champion.get('params', {}).get('learning_rate', champion.get('params', {}).get('train.lr', 'N/A'))}` |",
+        f"| **Optimizer** | `{champion.get('params', {}).get('optimizer', champion.get('params', {}).get('train.optimizer', 'N/A'))}` |",
+        f"| **Dropout** | `{champion.get('params', {}).get('dropout', champion.get('params', {}).get('model.dropout', 'N/A'))}` |",
+        f"| **Batch Size** | `{champion.get('params', {}).get('batch_size', champion.get('params', {}).get('data.batch_size', 'N/A'))}` |",
+        f"| **Weight Decay** | `{champion.get('params', {}).get('weight_decay', champion.get('params', {}).get('train.weight_decay', 'N/A'))}` |",
+        f"| **Checkpoint Path** | `{champion.get('checkpoint_path', 'N/A')}` |",
+        "",
+        "---",
+        "",
+        "## 📊 Sweep Leaderboard",
+        "",
+        "| Rank | Run Name | Run ID | Val Acc | Val Loss | Best Epoch | LR | Optimizer | Dropout | Batch Size | Weight Decay |",
+        "| :---: | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+    ]
+
+    for rank, trial in enumerate(ranked_trials, start=1):
+        p = trial.get("params", {})
+        lr_val = p.get("learning_rate", p.get("train.lr", "N/A"))
+        lr_str = f"{float(lr_val):.2e}" if isinstance(lr_val, (int, float)) else str(lr_val)
+        opt_str = str(p.get("optimizer", p.get("train.optimizer", "N/A")))
+        do_val = p.get("dropout", p.get("model.dropout", "N/A"))
+        do_str = f"{float(do_val):.3f}" if isinstance(do_val, (int, float)) else str(do_val)
+        bs_str = str(p.get("batch_size", p.get("data.batch_size", "N/A")))
+        wd_val = p.get("weight_decay", p.get("train.weight_decay", "N/A"))
+        wd_str = f"{float(wd_val):.2e}" if isinstance(wd_val, (int, float)) else str(wd_val)
+        val_acc_fmt = f"{float(trial.get('best_val_accuracy', 0.0)):.2%}"
+        val_loss_fmt = f"{float(trial.get('best_val_loss', 0.0)):.4f}"
+        badge = " 🥇" if rank == 1 else (" 🥈" if rank == 2 else (" 🥉" if rank == 3 else ""))
+
+        lines.append(
+            f"| {rank}{badge} | `{trial.get('run_name')}` | `{trial.get('run_id')}` | "
+            f"**{val_acc_fmt}** | {val_loss_fmt} | {trial.get('best_epoch')} | "
+            f"{lr_str} | {opt_str} | {do_str} | {bs_str} | {wd_str} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## 📈 Sweep Performance Statistics",
+            "",
+            "| Metric | Minimum | Mean | Maximum |",
+            "| :--- | :---: | :---: | :---: |",
+            f"| **Validation Accuracy** | {min_acc:.2%} | {mean_acc:.2%} | {max_acc:.2%} |",
+            f"| **Validation Loss** | {min_loss:.4f} | {mean_loss:.4f} | {max_loss:.4f} |",
+            "",
+            "---",
+            "",
+            "## 🚀 Promotion & Deployment",
+            "",
+            "To promote this sweep's champion model into canonical checkpoints and update `params.yaml`:",
+            "",
+            "```bash",
+            f"make sweep-promote SWEEP_ID={resolved_sweep_id}",
+            "```",
+            "",
+            "To promote the champion model and immediately release it to Hugging Face Hub:",
+            "",
+            "```bash",
+            f"make sweep-publish-hf SWEEP_ID={resolved_sweep_id}",
+            "```",
+            "",
+        ]
+    )
+
+    report_content = "\n".join(lines) + "\n"
+
+    # Save to local sweep folder
+    resolved_sweep_dir.mkdir(parents=True, exist_ok=True)
+    sweep_folder_report = resolved_sweep_dir / "sweep_report.md"
+    sweep_folder_report.write_text(report_content, encoding="utf-8")
+
+    # Also save to canonical reports dir
+    canon_report_path = (
+        Path(output_path) if output_path is not None else Path("artifacts/reports/sweep_report.md")
+    )
+    canon_report_path.parent.mkdir(parents=True, exist_ok=True)
+    canon_report_path.write_text(report_content, encoding="utf-8")
+
+    LOGGER.info(
+        "Generated sweep report for '%s' -> %s (mirror: %s)",
+        resolved_sweep_id,
+        sweep_folder_report,
+        canon_report_path,
+    )
+    return canon_report_path

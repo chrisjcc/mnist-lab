@@ -4,15 +4,21 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import logging
 import os
+import shutil
 import sys
+import time
+from pathlib import Path
 from typing import Any
 
 import wandb
 
 from mnist_pipeline.config import PipelineConfig, load_hydra_config
+from mnist_pipeline.reporting import generate_sweep_report
 from mnist_pipeline.train import TrainingSummary, train_model
+from mnist_pipeline.utils import load_json, save_json
 
 logging.basicConfig(
     level=logging.INFO,
@@ -137,6 +143,81 @@ def run_trial(
         summary.best_epoch,
         summary.best_val_loss,
     )
+
+    # 5. Isolate trial artifacts & maintain local sweep ledger
+    sweep_id = (
+        (cli_args or {}).get("sweep_id")
+        or (getattr(run, "sweep_id", None) if run is not None else None)
+        or os.environ.get("WANDB_SWEEP_ID")
+        or ("smoke_sweep" if smoke else "standalone_sweep")
+    )
+    run_id = (
+        (cli_args or {}).get("run_id")
+        or (getattr(run, "id", None) if run is not None else None)
+        or os.environ.get("WANDB_RUN_ID")
+        or f"trial_{int(time.time() * 1000) % 1000000}"
+    )
+    run_name = (getattr(run, "name", None) if run is not None else None) or str(run_id)
+
+    trial_dir = Path("artifacts/sweeps") / str(sweep_id) / str(run_id)
+    trial_dir.mkdir(parents=True, exist_ok=True)
+
+    # Copy trial checkpoint & train history to isolated folder
+    ckpt_src = Path(pipeline_cfg.paths.checkpoints_dir) / "checkpoint_best.pt"
+    trial_ckpt = trial_dir / "checkpoint_best.pt"
+    if ckpt_src.exists():
+        shutil.copy2(ckpt_src, trial_ckpt)
+
+    hist_src = Path(pipeline_cfg.paths.reports_dir) / "train_history.csv"
+    trial_hist = trial_dir / "train_history.csv"
+    if hist_src.exists():
+        shutil.copy2(hist_src, trial_hist)
+
+    # Record trial entry
+    trial_entry: dict[str, Any] = {
+        "run_id": str(run_id),
+        "run_name": str(run_name),
+        "sweep_id": str(sweep_id),
+        "params": merged_params,
+        "best_val_accuracy": float(summary.best_val_accuracy),
+        "best_val_loss": float(summary.best_val_loss),
+        "best_epoch": int(summary.best_epoch),
+        "total_epochs": len(summary.history),
+        "duration_seconds": float(summary.total_training_time_sec),
+        "checkpoint_path": str(trial_ckpt),
+        "history_path": str(trial_hist) if trial_hist.exists() else None,
+        "wandb_url": getattr(run, "url", None) if run is not None else None,
+        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+
+    # Update ledger
+    ledger_file = Path("artifacts/sweeps") / str(sweep_id) / "trials.json"
+    existing_trials: list[dict[str, Any]] = []
+    if ledger_file.exists():
+        try:
+            loaded = load_json(ledger_file)
+            raw_list = loaded.get("trials", []) if isinstance(loaded, dict) else loaded
+            if isinstance(raw_list, list):
+                existing_trials = [t for t in raw_list if t.get("run_id") != run_id]
+        except Exception:
+            existing_trials = []
+
+    existing_trials.append(trial_entry)
+    ledger_payload: dict[str, Any] = {
+        "sweep_id": str(sweep_id),
+        "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        "trials": existing_trials,
+    }
+    save_json(ledger_payload, ledger_file)
+    logger.info("Recorded trial in sweep ledger: %s", ledger_file)
+
+    # Auto-generate / update local sweep report
+    try:
+        report_path = generate_sweep_report(sweep_id=str(sweep_id))
+        logger.info("Updated sweep report at %s", report_path)
+    except Exception as exc:
+        logger.warning("Could not auto-generate sweep report: %s", exc)
+
     return summary
 
 
@@ -152,6 +233,8 @@ def parse_args(argv: list[str]) -> tuple[dict[str, Any], bool, list[str]]:
     parser = argparse.ArgumentParser(description="Execute a single W&B sweep trial.")
     parser.add_argument("--smoke", action="store_true", help="Run fast 1-epoch smoke trial.")
     parser.add_argument("--stage", type=str, default=None, help="Stage name identifier.")
+    parser.add_argument("--sweep-id", type=str, default=None, help="Sweep ID identifier.")
+    parser.add_argument("--run-id", type=str, default=None, help="Trial run ID identifier.")
 
     # Known sweep hyperparameter flags
     for key in PARAM_MAPPING:
