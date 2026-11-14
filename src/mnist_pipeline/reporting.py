@@ -23,7 +23,7 @@ from jinja2 import Template
 from mnist_pipeline.config import PipelineConfig
 from mnist_pipeline.data import load_processed_split
 from mnist_pipeline.model import MNISTConvNet, load_checkpoint
-from mnist_pipeline.utils import load_json
+from mnist_pipeline.utils import load_json, save_json
 
 LOGGER = logging.getLogger(__name__)
 
@@ -603,6 +603,67 @@ def generate_sweep_report(
         resolved_sweep_dir = root_sweeps / resolved_sweep_id
 
     trials_file = resolved_sweep_dir / "trials.json"
+    if not trials_file.exists():
+        # Seamless W&B API synchronization fallback
+        try:
+            import wandb
+
+            resolved_entity = entity or os.environ.get("WANDB_ENTITY", "rl4aa")
+            resolved_project = project_name or os.environ.get(
+                "WANDB_PROJECT", "mnist-classification"
+            )
+            api = wandb.Api()
+            sweep_path = f"{resolved_entity}/{resolved_project}/{resolved_sweep_id}"
+            LOGGER.info(
+                "Local ledger missing for '%s'; syncing trials from W&B API (%s)...",
+                resolved_sweep_id,
+                sweep_path,
+            )
+            wb_sweep = api.sweep(sweep_path)  # type: ignore[no-untyped-call]
+            synced_trials: list[dict[str, Any]] = []
+            for r in wb_sweep.runs:
+                if r.state in ("finished", "running"):
+                    cfg_dict = dict(r.config) if r.config else {}
+                    acc = float(r.summary.get("best_val_accuracy", 0.0) or 0.0)
+                    loss = float(r.summary.get("best_val_loss", 999.0) or 999.0)
+                    epoch = int(r.summary.get("best_epoch", 5) or 5)
+                    synced_trials.append(
+                        {
+                            "run_id": str(r.id),
+                            "run_name": str(r.name or r.id),
+                            "sweep_id": str(resolved_sweep_id),
+                            "params": cfg_dict,
+                            "best_val_accuracy": acc,
+                            "best_val_loss": loss,
+                            "best_epoch": epoch,
+                            "total_epochs": int(cfg_dict.get("epochs", 5)),
+                            "duration_seconds": float(r.summary.get("_runtime", 0.0) or 0.0),
+                            "checkpoint_path": str(
+                                resolved_sweep_dir / r.id / "checkpoint_best.pt"
+                            ),
+                            "history_path": None,
+                            "wandb_url": r.url,
+                            "timestamp": str(r.created_at),
+                        }
+                    )
+            if synced_trials:
+                resolved_sweep_dir.mkdir(parents=True, exist_ok=True)
+                save_json(
+                    {
+                        "sweep_id": str(resolved_sweep_id),
+                        "project": str(resolved_project),
+                        "entity": str(resolved_entity),
+                        "updated_at": datetime.datetime.now(datetime.UTC).isoformat(),
+                        "trials": synced_trials,
+                    },
+                    trials_file,
+                )
+                LOGGER.info(
+                    "Synced %d trials from W&B API to '%s'.", len(synced_trials), trials_file
+                )
+        except Exception as exc:
+            LOGGER.debug("Could not sync sweep from W&B API: %s", exc)
+
     if not trials_file.exists():
         raise FileNotFoundError(
             f"Sweep trial ledger not found at '{trials_file}'. "

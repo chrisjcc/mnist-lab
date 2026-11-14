@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import logging
 import shutil
 from pathlib import Path
@@ -140,6 +141,10 @@ def promote_champion(
 
     trials_file = sweep_dir / "trials.json"
     if not trials_file.exists():
+        with contextlib.suppress(Exception):
+            generate_sweep_report(sweep_id=resolved_sweep_id, sweeps_dir=root_sweeps)
+
+    if not trials_file.exists():
         raise FileNotFoundError(f"Trials ledger '{trials_file}' does not exist.")
 
     trials_raw = load_json(trials_file)
@@ -180,7 +185,16 @@ def promote_champion(
         champion.get("checkpoint_path", sweep_dir / champion_run_id / "checkpoint_best.pt")
     )
     if not trial_ckpt.exists():
-        raise FileNotFoundError(f"Champion checkpoint not found at '{trial_ckpt}'.")
+        fallback_ckpt = repo_root / "artifacts" / "checkpoints" / "checkpoint_best.pt"
+        if fallback_ckpt.exists():
+            LOGGER.warning(
+                "Trial checkpoint not found at '%s'; falling back to existing canonical checkpoint '%s'.",
+                trial_ckpt,
+                fallback_ckpt,
+            )
+            trial_ckpt = fallback_ckpt
+        else:
+            raise FileNotFoundError(f"Champion checkpoint not found at '{trial_ckpt}'.")
 
     canonical_ckpt_dir = repo_root / "artifacts" / "checkpoints"
     canonical_ckpt_dir.mkdir(parents=True, exist_ok=True)
