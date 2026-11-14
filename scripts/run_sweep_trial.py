@@ -7,11 +7,17 @@ import argparse
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Any
 
-import wandb
-from mnist_pipeline.config import PipelineConfig, load_hydra_config
-from mnist_pipeline.train import TrainingSummary, train_model
+# Ensure src/ is available for module resolution
+_SRC_DIR = str(Path(__file__).resolve().parent.parent / "src")
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
+import wandb  # noqa: E402
+from mnist_pipeline.config import PipelineConfig, load_hydra_config  # noqa: E402
+from mnist_pipeline.train import TrainingSummary, train_model  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

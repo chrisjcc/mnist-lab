@@ -183,29 +183,44 @@ sweep:
 		echo "ERROR: Sweep configuration not found: $(SWEEP_CONFIG)"; \
 		exit 1; \
 	fi
-	@echo "=========================================================="
-	@echo "Initializing Weights & Biases Sweep"
-	@echo "=========================================================="
-	@echo "Sweep config: $(SWEEP_CONFIG)"
-	@echo "Trial count:  $(COUNT)"
-	@echo "=========================================================="
-	@OUTPUT=$$($(WANDB) sweep $(SWEEP_CONFIG) 2>&1) || { \
+	@ENTITY_FLAG=""; \
+	if [ -n "$(WANDB_ENTITY)" ]; then \
+		ENTITY_FLAG="--entity $(WANDB_ENTITY)"; \
+	fi; \
+	PROJECT_FLAG=""; \
+	if [ -n "$(WANDB_PROJECT)" ]; then \
+		PROJECT_FLAG="--project $(WANDB_PROJECT)"; \
+	fi; \
+	echo "=========================================================="; \
+	echo "Initializing Weights & Biases Sweep"; \
+	echo "=========================================================="; \
+	echo "Sweep config: $(SWEEP_CONFIG)"; \
+	echo "Entity:       $${WANDB_ENTITY:-default}"; \
+	echo "Project:      $${WANDB_PROJECT:-mnist-classification}"; \
+	echo "Trial count:  $(COUNT)"; \
+	echo "=========================================================="; \
+	OUTPUT=$$($(WANDB) sweep $$ENTITY_FLAG $$PROJECT_FLAG $(SWEEP_CONFIG) 2>&1) || { \
 		echo "$$OUTPUT"; \
-		echo "ERROR: Failed to initialize W&B sweep. Check your WANDB_API_KEY."; \
+		echo "ERROR: Failed to initialize W&B sweep. Verify WANDB_API_KEY and WANDB_ENTITY in .env."; \
 		exit 1; \
 	}; \
 	echo "$$OUTPUT"; \
-	SWEEP_ID=$$(echo "$$OUTPUT" | grep -oE "wandb agent [^ ]+" | awk '{print $$3}' | tail -1); \
-	if [ -z "$$SWEEP_ID" ]; then \
+	AGENT_TARGET=$$(echo "$$OUTPUT" | grep -oE "wandb agent [^ ]+" | awk '{print $$3}' | tail -1); \
+	if [ -z "$$AGENT_TARGET" ]; then \
 		SWEEP_ID=$$(echo "$$OUTPUT" | grep -oE "ID: [a-zA-Z0-9]+" | awk '{print $$2}' | tail -1); \
+		if [ -n "$$SWEEP_ID" ] && [ -n "$(WANDB_ENTITY)" ]; then \
+			AGENT_TARGET="$(WANDB_ENTITY)/$${WANDB_PROJECT:-mnist-classification}/$$SWEEP_ID"; \
+		else \
+			AGENT_TARGET="$$SWEEP_ID"; \
+		fi; \
 	fi; \
-	if [ -z "$$SWEEP_ID" ]; then \
+	if [ -z "$$AGENT_TARGET" ]; then \
 		echo "ERROR: Failed to extract Sweep ID from wandb output."; \
 		exit 1; \
 	fi; \
-	echo "Parsed Sweep ID: $$SWEEP_ID"; \
+	echo "Parsed Sweep Agent Target: $$AGENT_TARGET"; \
 	echo "Starting W&B sweep agent..."; \
-	$(WANDB) agent $$SWEEP_ID --count $(COUNT)
+	PATH="$(if $(BIN_DIR),$(BIN_DIR):)$$PATH" $(WANDB) agent $$AGENT_TARGET --count $(COUNT)
 
 sweep-smoke:
 	$(PYTHON) scripts/run_sweep_trial.py --smoke --learning_rate 0.002 --dropout 0.3
