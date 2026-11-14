@@ -16,7 +16,6 @@ from mnist_pipeline.config import PipelineConfig
 from mnist_pipeline.data import build_dataloaders
 from mnist_pipeline.metrics import compute_classification_metrics
 from mnist_pipeline.model import (
-    MNISTConvNet,
     count_total_parameters,
     count_trainable_parameters,
     load_checkpoint,
@@ -180,7 +179,7 @@ def benchmark_checkpoint(
     device = resolve_device(cfg.train.device)
     ckpt_path = _resolve_checkpoint_path(cfg, checkpoint_path)
 
-    model: MNISTConvNet
+    model: nn.Module
     model, _ = load_checkpoint(ckpt_path, device=device)
     model.eval()
 

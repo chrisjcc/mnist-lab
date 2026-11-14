@@ -186,3 +186,54 @@ def test_cache_invalidation_on_content_change(tmp_path: Path) -> None:
     params_file.write_text("train:\n  lr: 0.0005\n")
     d2 = load_params_dict(params_file)
     assert d2["train"]["lr"] == 0.0005
+
+
+def test_transformer_hydra_config_loads() -> None:
+    cfg = load_hydra_config(
+        config_dir="configs",
+        config_name="config",
+        overrides=["model=transformer"],
+    )
+    assert cfg.model.name == "mnist_vit"
+    assert cfg.model.architecture == "transformer"
+    assert cfg.model.patch_size == 4
+    assert cfg.model.embed_dim == 128
+    assert cfg.model.depth == 4
+    assert cfg.model.num_heads == 4
+    assert cfg.model.mlp_ratio == 2.0
+
+
+def test_artifact_path_isolation_interpolation() -> None:
+    custom_art = "artifacts/models/mnist_vit"
+    cfg = load_hydra_config(
+        config_dir="configs",
+        config_name="config",
+        overrides=[f"paths.artifacts_dir={custom_art}"],
+    )
+    assert cfg.paths.artifacts_dir == custom_art
+    assert cfg.paths.checkpoints_dir == f"{custom_art}/checkpoints"
+    assert cfg.paths.evaluation_dir == f"{custom_art}/evaluation"
+    assert cfg.paths.benchmarks_dir == f"{custom_art}/benchmarks"
+    assert cfg.paths.reports_dir == f"{custom_art}/reports"
+    assert cfg.paths.plots_dir == f"{custom_art}/reports/plots"
+    assert cfg.evaluate.checkpoint_path == f"{custom_art}/checkpoints/checkpoint_best.pt"
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        "model=transformer model.patch_size=5",
+        "model=transformer model.embed_dim=127",
+        "model=transformer model.depth=0",
+        "model=transformer model.num_heads=0",
+        "model=transformer model.mlp_ratio=0",
+        "model.architecture=unsupported_arch",
+    ],
+)
+def test_invalid_transformer_config_raises(override: str) -> None:
+    with pytest.raises(ValueError):
+        load_hydra_config(
+            config_dir="configs",
+            config_name="config",
+            overrides=override.split(),
+        )

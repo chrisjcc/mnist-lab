@@ -18,11 +18,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torch.nn as nn
 from jinja2 import Template
 
 from mnist_pipeline.config import PipelineConfig
 from mnist_pipeline.data import load_processed_split
-from mnist_pipeline.model import MNISTConvNet, load_checkpoint
+from mnist_pipeline.model import load_checkpoint
 from mnist_pipeline.utils import load_json, save_json
 
 LOGGER = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ def plot_confusion_matrix(
 
 
 def plot_sample_predictions(
-    model: MNISTConvNet,
+    model: nn.Module,
     test_images: torch.Tensor,
     test_labels: torch.Tensor,
     output_path: str | Path,
@@ -196,7 +197,7 @@ def plot_sample_predictions(
     """Plot a 4x4 grid of test digits annotated with predicted label and confidence.
 
     Args:
-        model: Trained `MNISTConvNet` in eval mode.
+        model: Trained PyTorch model in eval mode.
         test_images: Normalized test image tensor `(N, 1, 28, 28)`.
         test_labels: Ground-truth test label tensor `(N,)`.
         output_path: Destination PNG path (`sample_predictions.png`).

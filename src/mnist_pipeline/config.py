@@ -185,25 +185,39 @@ class DataConfig:
 
 @dataclass
 class ModelConfig:
-    """Configuration for the MNIST convolutional neural network architecture.
+    """Configuration for MNIST neural network architectures (CNN and Vision Transformer).
 
     Attributes:
         name: Architecture identifier string.
+        architecture: Model architecture family ('cnn' or 'transformer' / 'vit').
         in_channels: Number of input image channels (1 for grayscale MNIST).
-        conv_channels: Output channels for each convolutional block.
-        kernel_size: Convolutional kernel size.
-        dropout: Dropout probability before the classification head.
-        hidden_dim: Dimension of the intermediate fully connected layer.
+        conv_channels: Output channels for each convolutional block (CNN).
+        kernel_size: Convolutional kernel size (CNN).
+        dropout: Dropout probability before classification head (CNN) or encoder dropout (ViT).
+        hidden_dim: Dimension of intermediate fully connected layer (CNN).
         num_classes: Number of target digit classes (10 for digits 0-9).
+        patch_size: Square patch side dimension in pixels (ViT).
+        embed_dim: Latent token embedding dimension (ViT).
+        depth: Number of Transformer encoder layers (ViT).
+        num_heads: Number of multi-head self-attention heads (ViT).
+        mlp_ratio: Ratio of feedforward MLP hidden dimension to embed_dim (ViT).
+        attention_dropout: Dropout probability applied to attention weights (ViT).
     """
 
     name: str = "mnist_cnn"
+    architecture: str = "cnn"
     in_channels: int = 1
     conv_channels: list[int] = field(default_factory=lambda: [32, 64])
     kernel_size: int = 3
     dropout: float = 0.25
     hidden_dim: int = 128
     num_classes: int = 10
+    patch_size: int = 4
+    embed_dim: int = 128
+    depth: int = 4
+    num_heads: int = 4
+    mlp_ratio: float = 2.0
+    attention_dropout: float = 0.0
 
 
 @dataclass
@@ -380,20 +394,47 @@ def validate_config(cfg: PipelineConfig | DictConfig) -> None:
     if cfg.data.num_workers < 0:
         raise ValueError(f"data.num_workers must be >= 0, got {cfg.data.num_workers}")
 
+    valid_architectures = {"cnn", "convnet", "transformer", "vit"}
+    arch = cfg.model.architecture.lower()
+    if arch not in valid_architectures:
+        raise ValueError(
+            f"model.architecture must be one of {sorted(valid_architectures)}, got '{cfg.model.architecture}'"
+        )
     if cfg.model.in_channels <= 0:
         raise ValueError(f"model.in_channels must be positive, got {cfg.model.in_channels}")
-    if len(cfg.model.conv_channels) < 1 or any(c <= 0 for c in cfg.model.conv_channels):
-        raise ValueError(
-            f"model.conv_channels must contain positive integers, got {cfg.model.conv_channels}"
-        )
-    if cfg.model.kernel_size <= 0:
-        raise ValueError(f"model.kernel_size must be positive, got {cfg.model.kernel_size}")
-    if not (0.0 <= cfg.model.dropout < 1.0):
-        raise ValueError(f"model.dropout must be in [0, 1), got {cfg.model.dropout}")
-    if cfg.model.hidden_dim <= 0:
-        raise ValueError(f"model.hidden_dim must be positive, got {cfg.model.hidden_dim}")
     if cfg.model.num_classes < 2:
         raise ValueError(f"model.num_classes must be >= 2, got {cfg.model.num_classes}")
+
+    if arch in {"cnn", "convnet"}:
+        if len(cfg.model.conv_channels) < 1 or any(c <= 0 for c in cfg.model.conv_channels):
+            raise ValueError(
+                f"model.conv_channels must contain positive integers, got {cfg.model.conv_channels}"
+            )
+        if cfg.model.kernel_size <= 0:
+            raise ValueError(f"model.kernel_size must be positive, got {cfg.model.kernel_size}")
+        if not (0.0 <= cfg.model.dropout < 1.0):
+            raise ValueError(f"model.dropout must be in [0, 1), got {cfg.model.dropout}")
+        if cfg.model.hidden_dim <= 0:
+            raise ValueError(f"model.hidden_dim must be positive, got {cfg.model.hidden_dim}")
+    else:  # transformer / vit
+        if cfg.model.patch_size <= 0 or 28 % cfg.model.patch_size != 0:
+            raise ValueError(f"model.patch_size must divide 28 evenly, got {cfg.model.patch_size}")
+        if cfg.model.num_heads <= 0:
+            raise ValueError(f"model.num_heads must be positive, got {cfg.model.num_heads}")
+        if cfg.model.embed_dim <= 0 or cfg.model.embed_dim % cfg.model.num_heads != 0:
+            raise ValueError(
+                f"model.embed_dim ({cfg.model.embed_dim}) must be divisible by num_heads ({cfg.model.num_heads})"
+            )
+        if cfg.model.depth <= 0:
+            raise ValueError(f"model.depth must be positive, got {cfg.model.depth}")
+        if cfg.model.mlp_ratio <= 0:
+            raise ValueError(f"model.mlp_ratio must be positive, got {cfg.model.mlp_ratio}")
+        if not (0.0 <= cfg.model.dropout < 1.0):
+            raise ValueError(f"model.dropout must be in [0, 1), got {cfg.model.dropout}")
+        if not (0.0 <= cfg.model.attention_dropout < 1.0):
+            raise ValueError(
+                f"model.attention_dropout must be in [0, 1), got {cfg.model.attention_dropout}"
+            )
 
     if cfg.train.epochs <= 0:
         raise ValueError(f"train.epochs must be positive, got {cfg.train.epochs}")
