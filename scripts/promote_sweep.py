@@ -76,22 +76,28 @@ def update_params_yaml(
     # Map champion parameters
     if "learning_rate" in champion_params or "train.lr" in champion_params:
         val = champion_params.get("learning_rate", champion_params.get("train.lr"))
-        data["train"]["lr"] = float(val)
+        if val is not None:
+            data["train"]["lr"] = float(val)
     if "optimizer" in champion_params or "train.optimizer" in champion_params:
         val = champion_params.get("optimizer", champion_params.get("train.optimizer"))
-        data["train"]["optimizer"] = str(val)
+        if val is not None:
+            data["train"]["optimizer"] = str(val)
     if "weight_decay" in champion_params or "train.weight_decay" in champion_params:
         val = champion_params.get("weight_decay", champion_params.get("train.weight_decay"))
-        data["train"]["weight_decay"] = float(val)
+        if val is not None:
+            data["train"]["weight_decay"] = float(val)
     if "dropout" in champion_params or "model.dropout" in champion_params:
         val = champion_params.get("dropout", champion_params.get("model.dropout"))
-        data["model"]["dropout"] = float(val)
+        if val is not None:
+            data["model"]["dropout"] = float(val)
     if "batch_size" in champion_params or "data.batch_size" in champion_params:
         val = champion_params.get("batch_size", champion_params.get("data.batch_size"))
-        data["data"]["batch_size"] = int(val)
+        if val is not None:
+            data["data"]["batch_size"] = int(val)
     if "epochs" in champion_params or "train.epochs" in champion_params:
         val = champion_params.get("epochs", champion_params.get("train.epochs"))
-        data["train"]["epochs"] = int(val)
+        if val is not None:
+            data["train"]["epochs"] = int(val)
 
     with path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, sort_keys=False)

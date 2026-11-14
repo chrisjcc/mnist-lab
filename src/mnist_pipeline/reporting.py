@@ -312,10 +312,11 @@ def generate_evaluation_report(
     lines.extend(
         [
             "",
-            "### Training Curves",
+            "### Training & Validation Curves",
             "",
-            "- Loss Curve: `plots/loss_curve.png`",
-            "- Accuracy Curve: `plots/accuracy_curve.png`",
+            "| Training vs. Validation Loss | Training vs. Validation Accuracy |",
+            "| :---: | :---: |",
+            "| ![Loss Curve](plots/loss_curve.png) | ![Accuracy Curve](plots/accuracy_curve.png) |",
             "",
             "---",
             "",
@@ -347,6 +348,12 @@ def generate_evaluation_report(
 
     lines.extend(
         [
+            "",
+            "### Confusion Matrix & Sample Predictions",
+            "",
+            "| Held-Out Test Set Confusion Matrix (10x10) | Sample Predictions on Test Digits (4x4) |",
+            "| :---: | :---: |",
+            "| ![Confusion Matrix](plots/confusion_matrix.png) | ![Sample Predictions](plots/sample_predictions.png) |",
             "",
             "---",
             "",
