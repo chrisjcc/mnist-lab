@@ -28,6 +28,7 @@ MYPY := $(if $(BIN_DIR),$(BIN_DIR)/mypy,mypy)
 PYTEST := $(if $(BIN_DIR),$(BIN_DIR)/pytest,pytest)
 DVC := $(if $(BIN_DIR),$(BIN_DIR)/dvc,dvc)
 STREAMLIT := $(if $(BIN_DIR),$(BIN_DIR)/streamlit,streamlit)
+WANDB := $(if $(BIN_DIR),$(BIN_DIR)/wandb,wandb)
 
 # Deployment & Container Configuration
 APP_IMAGE ?= mnist-lab-app
@@ -39,6 +40,7 @@ DATASET_REPO ?= chrisjcc/mnist-dataset
         data preprocess dvc-repro pipeline \
         train evaluate benchmark report \
         smoke-eval evaluate-mve \
+        sweep sweep-smoke \
         generate-hf-cards publish-hf-cards publish-hf-model publish-hf-dataset publish-hf-release \
         hf-upload hf-inference \
         app-run run-app docker-build docker-run
@@ -73,6 +75,10 @@ help:
 	@echo "  make report                   Generate evaluation report, plots, and HF cards"
 	@echo "  make smoke-eval               Execute fast (< 2.0s) zero-budget CI smoke evaluation"
 	@echo "  make evaluate-mve             Adjudicate MVE baseline acceptance criteria gates"
+	@echo ""
+	@echo "Hyperparameter Optimization (W&B Sweeps):"
+	@echo "  make sweep                    Initialize and run W&B Bayesian hyperparameter sweep"
+	@echo "  make sweep-smoke              Run fast local 1-epoch sweep trial smoke test"
 	@echo ""
 	@echo "Hugging Face Hub Integration:"
 	@echo "  make generate-hf-cards        Generate Model Card & Dataset Card locally (--card-only)"
@@ -166,7 +172,46 @@ evaluate-mve:
 	$(PYTHON) scripts/run_mve_evaluation.py $(ARGS)
 
 # ------------------------------------------------------------
-# 4. Hugging Face Hub Integration
+# 4. Hyperparameter Optimization (Weights & Biases Sweeps)
+# ------------------------------------------------------------
+
+SWEEP_CONFIG ?= sweeps/cnn_bayes.yaml
+COUNT ?= 5
+
+sweep:
+	@if [ ! -f "$(SWEEP_CONFIG)" ]; then \
+		echo "ERROR: Sweep configuration not found: $(SWEEP_CONFIG)"; \
+		exit 1; \
+	fi
+	@echo "=========================================================="
+	@echo "Initializing Weights & Biases Sweep"
+	@echo "=========================================================="
+	@echo "Sweep config: $(SWEEP_CONFIG)"
+	@echo "Trial count:  $(COUNT)"
+	@echo "=========================================================="
+	@OUTPUT=$$($(WANDB) sweep $(SWEEP_CONFIG) 2>&1) || { \
+		echo "$$OUTPUT"; \
+		echo "ERROR: Failed to initialize W&B sweep. Check your WANDB_API_KEY."; \
+		exit 1; \
+	}; \
+	echo "$$OUTPUT"; \
+	SWEEP_ID=$$(echo "$$OUTPUT" | grep -oE "wandb agent [^ ]+" | awk '{print $$3}' | tail -1); \
+	if [ -z "$$SWEEP_ID" ]; then \
+		SWEEP_ID=$$(echo "$$OUTPUT" | grep -oE "ID: [a-zA-Z0-9]+" | awk '{print $$2}' | tail -1); \
+	fi; \
+	if [ -z "$$SWEEP_ID" ]; then \
+		echo "ERROR: Failed to extract Sweep ID from wandb output."; \
+		exit 1; \
+	fi; \
+	echo "Parsed Sweep ID: $$SWEEP_ID"; \
+	echo "Starting W&B sweep agent..."; \
+	$(WANDB) agent $$SWEEP_ID --count $(COUNT)
+
+sweep-smoke:
+	$(PYTHON) scripts/run_sweep_trial.py --smoke --learning_rate 0.002 --dropout 0.3
+
+# ------------------------------------------------------------
+# 5. Hugging Face Hub Integration
 # ------------------------------------------------------------
 
 generate-hf-cards:

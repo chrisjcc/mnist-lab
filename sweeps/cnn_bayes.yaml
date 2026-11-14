@@ -1,0 +1,55 @@
+# -----------------------------------------------------------------------------
+# MNIST CNN Hyperparameter Sweep Configuration
+# -----------------------------------------------------------------------------
+# Weights & Biases Bayesian hyperparameter sweep for optimizing MNISTConvNet.
+
+# --- Sweep Settings ---
+name: mnist-cnn-bayes-sweep
+description: >
+  Bayesian hyperparameter optimization for MNIST CNN training.
+  Searches learning rate, weight decay, optimizer, batch size, and dropout
+  while maximizing validation accuracy using Hyperband early stopping.
+project: mnist-classification
+program: scripts/run_sweep_trial.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: bayes
+metric:
+  name: val/accuracy
+  goal: maximize
+
+# Enable Hyperband Early Stopping across epochs
+early_terminate:
+  type: hyperband
+  min_iter: 3
+  eta: 2
+
+# --- Search Space ---
+parameters:
+  learning_rate:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.01
+  weight_decay:
+    distribution: log_uniform_values
+    min: 0.000001
+    max: 0.001
+  optimizer:
+    values:
+      - adam
+      - adamw
+      - sgd
+  dropout:
+    distribution: uniform
+    min: 0.1
+    max: 0.5
+  batch_size:
+    values:
+      - 64
+      - 128
+      - 256
+  epochs:
+    value: 5

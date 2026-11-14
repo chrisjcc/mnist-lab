@@ -158,7 +158,117 @@ make train ARGS="train.epochs=10 train.optimizer=adamw train.lr=0.0005"
 python scripts/train.py +experiment=baseline train.device=auto
 ```
 
-### Step 3.3: Resume Training from a Saved Checkpoint
+### Step 3.3: Inspecting Composed Hydra Configuration & SSoT Precedence
+
+Hydra allows you to inspect the fully composed and resolved configuration tree directly from the command line using `--help`. Any CLI override (e.g. `train.lr=0.005`) replaces the dynamic `${param:...}` SSoT default from `params.yaml`:
+
+```bash
+python scripts/train.py train.lr=0.005 --help
+```
+
+Output:
+
+```text
+train is powered by Hydra.
+
+== Configuration groups ==
+Compose your configuration from those groups (group=option)
+
+data: mnist
+evaluate: default
+experiment: baseline
+hf: default
+model: cnn
+train: default
+wandb: default
+
+
+== Config ==
+Override anything in the config (foo.bar=value)
+
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  download: true
+  val_fraction: ${param:data.val_fraction, 0.1}
+  mean: ${param:data.mean, 0.1307}
+  std: ${param:data.std, 0.3081}
+  batch_size: ${param:data.batch_size, 128}
+  num_workers: 0
+  pin_memory: false
+  seed: ${param:data.seed, 42}
+  allow_synthetic_fallback: false
+  num_synthetic_train: 600
+  num_synthetic_test: 100
+model:
+  name: mnist_cnn
+  in_channels: ${param:model.in_channels, 1}
+  conv_channels: ${param:model.conv_channels, [32, 64]}
+  kernel_size: ${param:model.kernel_size, 3}
+  dropout: ${param:model.dropout, 0.25}
+  hidden_dim: ${param:model.hidden_dim, 128}
+  num_classes: ${param:model.num_classes, 10}
+train:
+  epochs: ${param:train.epochs, 5}
+  lr: 0.005
+  weight_decay: ${param:train.weight_decay, 0.0}
+  optimizer: ${param:train.optimizer, adam}
+  seed: ${param:train.seed, 42}
+  deterministic: ${param:train.deterministic, true}
+  device: auto
+  resume_from: null
+  early_stopping_patience: null
+  max_train_batches: null
+  max_val_batches: null
+evaluate:
+  batch_size: ${param:evaluate.batch_size, 256}
+  checkpoint_path: artifacts/checkpoints/checkpoint_best.pt
+  benchmark_warmup_runs: ${param:evaluate.benchmark_warmup_runs, 10}
+  benchmark_timed_runs: ${param:evaluate.benchmark_timed_runs, 50}
+  benchmark_batch_sizes: ${param:evaluate.benchmark_batch_sizes, [1, 32, 128]}
+  mve_min_val_accuracy: 0.985
+  mve_min_test_accuracy: 0.985
+  mve_min_macro_f1: 0.985
+  mve_max_p95_latency_ms: 25.0
+  mve_min_throughput_sps: 1000.0
+wandb:
+  enabled: true
+  project: mnist-classification
+  entity: null
+  mode: disabled
+  run_name: null
+  tags:
+  - mnist
+  - cnn
+  - baseline
+  log_model: false
+hf:
+  repo_id: chrisjcc/mnist-cnn
+  dataset_repo_id: chrisjcc/mnist-dataset
+  revision: main
+  private: false
+  cache_dir: artifacts/hf_cache
+  dry_run: false
+  image_path: null
+  sample_index: 0
+paths:
+  artifacts_dir: artifacts
+  checkpoints_dir: artifacts/checkpoints
+  evaluation_dir: artifacts/evaluation
+  benchmarks_dir: artifacts/benchmarks
+  reports_dir: artifacts/reports
+  plots_dir: artifacts/reports/plots
+  templates_dir: templates
+  docs_dir: docs
+
+
+Powered by Hydra (https://hydra.cc)
+Use --hydra-help to view Hydra specific help
+```
+
+Notice that `train.lr` resolves to `0.005` (the CLI override), whereas non-overridden fields like `train.epochs: ${param:train.epochs, 5}` dynamically pull from `params.yaml`.
+
+### Step 3.4: Resume Training from a Saved Checkpoint
 
 ```bash
 make train ARGS="train.resume_from=artifacts/checkpoints/checkpoint_last.pt train.epochs=8"
@@ -195,6 +305,67 @@ make train ARGS="wandb.mode=online wandb.project=mnist-classification wandb.run_
 make train ARGS="wandb.mode=offline"
 wandb sync wandb/latest-run
 ```
+
+### Step 4.2: Automated Hyperparameter Sweeps (Bayesian Optimization)
+
+Weights & Biases sweeps explore hyperparameter configurations (learning rate, weight decay, optimizer, batch size, and dropout) using Bayesian optimization and Hyperband early stopping.
+
+#### 1. Sweep Configuration (`sweeps/cnn_bayes.yaml`)
+
+```yaml
+name: mnist-cnn-bayes-sweep
+project: mnist-classification
+program: scripts/run_sweep_trial.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: bayes
+metric:
+  name: val/accuracy
+  goal: maximize
+
+early_terminate:
+  type: hyperband
+  min_iter: 3
+  eta: 2
+
+parameters:
+  learning_rate:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.01
+  weight_decay:
+    distribution: log_uniform_values
+    min: 0.000001
+    max: 0.001
+  optimizer:
+    values: [adam, adamw, sgd]
+  dropout:
+    distribution: uniform
+    min: 0.1
+    max: 0.5
+  batch_size:
+    values: [64, 128, 256]
+```
+
+#### 2. Launching a Sweep
+
+```bash
+# Initialize and execute 5 Bayesian sweep trials
+make sweep COUNT=5
+
+# Or run a fast local 1-epoch sweep trial smoke check (< 1s)
+make sweep-smoke
+```
+
+#### How W&B Sweeps Interact with the SSoT Architecture
+
+- `scripts/run_sweep_trial.py` receives parameters from `wandb agent` (or CLI arguments).
+- Swept hyperparameters are dynamically formatted into Hydra overrides.
+- Non-swept parameters (e.g. `model.kernel_size`, `model.hidden_dim`, `data.mean`, `data.std`) continue to pull directly from `params.yaml` (SSoT).
+- Metrics (`train/loss`, `val/loss`, `val/accuracy`) are logged epoch-by-epoch, allowing Hyperband early stopping to prune underperforming runs.
 
 ---
 
