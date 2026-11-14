@@ -1,0 +1,114 @@
+{
+  "sweep_id": "smoke_sweep",
+  "updated_at": "2026-11-14T03:14:49.790020+00:00",
+  "trials": [
+    {
+      "run_id": "trial_622381",
+      "run_name": "trial_622381",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.298828125,
+      "best_val_loss": 2.917227625846863,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.15056016598828137,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_622381/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_622381/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T02:17:02.384516+00:00"
+    },
+    {
+      "run_id": "trial_712940",
+      "run_name": "trial_712940",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.298828125,
+      "best_val_loss": 2.917227625846863,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.16302391700446606,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_712940/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_712940/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T02:18:32.944776+00:00"
+    },
+    {
+      "run_id": "trial_417520",
+      "run_name": "trial_417520",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.298828125,
+      "best_val_loss": 2.917227625846863,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.13662366603966802,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_417520/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_417520/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T02:30:17.525008+00:00"
+    },
+    {
+      "run_id": "trial_28958",
+      "run_name": "trial_28958",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.291015625,
+      "best_val_loss": 2.6400755643844604,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.2166939169401303,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_28958/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_28958/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T02:40:28.962650+00:00"
+    },
+    {
+      "run_id": "trial_62799",
+      "run_name": "trial_62799",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.298828125,
+      "best_val_loss": 2.917227625846863,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.1440180839272216,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_62799/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_62799/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T02:41:02.801210+00:00"
+    },
+    {
+      "run_id": "trial_89784",
+      "run_name": "trial_89784",
+      "sweep_id": "smoke_sweep",
+      "params": {
+        "learning_rate": 0.003,
+        "dropout": 0.3
+      },
+      "best_val_accuracy": 0.298828125,
+      "best_val_loss": 2.917227625846863,
+      "best_epoch": 1,
+      "total_epochs": 1,
+      "duration_seconds": 0.15162916702684015,
+      "checkpoint_path": "artifacts/sweeps/smoke_sweep/trial_89784/checkpoint_best.pt",
+      "history_path": "artifacts/sweeps/smoke_sweep/trial_89784/train_history.csv",
+      "wandb_url": null,
+      "timestamp": "2026-11-14T03:14:49.789335+00:00"
+    }
+  ]
+}

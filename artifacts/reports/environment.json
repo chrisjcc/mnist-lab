@@ -1,0 +1,24 @@
+{
+  "timestamp_utc": "2026-11-14T03:14:52.049397+00:00",
+  "python_version": "3.12.12",
+  "platform": "macOS-15.2-arm64-arm-64bit",
+  "processor": "arm",
+  "cpu_count": 11,
+  "torch_version": "2.15.0",
+  "numpy_version": "2.5.4",
+  "device": "cpu",
+  "cuda_available": false,
+  "cuda_version": null,
+  "gpu_name": null,
+  "seed": 42,
+  "git_commit": "cfbe162780b7c899eb6d9b40e820aa2708816869",
+  "training_summary": {
+    "best_epoch": 1,
+    "best_val_accuracy": 0.15234375,
+    "best_val_loss": 2.2635674476623535,
+    "total_training_time_sec": 0.14168854197487235,
+    "avg_epoch_time_sec": 0.14168854197487235,
+    "trainable_parameters": 421834,
+    "epochs_completed": 1
+  }
+}

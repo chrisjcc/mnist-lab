@@ -1,0 +1,76 @@
+{
+  "test_loss": 2.24964,
+  "test_acc": 0.2293,
+  "macro_precision": 0.322509,
+  "macro_recall": 0.229238,
+  "macro_f1": 0.163058,
+  "weighted_precision": 0.33805,
+  "weighted_recall": 0.2293,
+  "weighted_f1": 0.164722,
+  "num_samples": 10000,
+  "per_class": {
+    "0": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 980
+    },
+    "1": {
+      "precision": 1.0,
+      "recall": 0.069604,
+      "f1": 0.130148,
+      "support": 1135
+    },
+    "2": {
+      "precision": 0.777778,
+      "recall": 0.033915,
+      "f1": 0.064995,
+      "support": 1032
+    },
+    "3": {
+      "precision": 0.578544,
+      "recall": 0.448515,
+      "f1": 0.505298,
+      "support": 1010
+    },
+    "4": {
+      "precision": 0.215686,
+      "recall": 0.033605,
+      "f1": 0.05815,
+      "support": 982
+    },
+    "5": {
+      "precision": 0.136507,
+      "recall": 0.389013,
+      "f1": 0.202097,
+      "support": 892
+    },
+    "6": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "support": 958
+    },
+    "7": {
+      "precision": 0.322022,
+      "recall": 0.867704,
+      "f1": 0.469721,
+      "support": 1028
+    },
+    "8": {
+      "precision": 0.068966,
+      "recall": 0.002053,
+      "f1": 0.003988,
+      "support": 974
+    },
+    "9": {
+      "precision": 0.12559,
+      "recall": 0.447968,
+      "f1": 0.196181,
+      "support": 1009
+    }
+  },
+  "checkpoint_path": "artifacts/checkpoints/checkpoint_best.pt",
+  "checkpoint_epoch": 1,
+  "device": "cpu"
+}
