@@ -1,0 +1,304 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python scripts/preprocess.py
+    deps:
+    - path: configs/config.yaml
+      hash: md5
+      md5: 886d4c37d168fca92e279f8a7370e666
+      size: 444
+    - path: configs/data/mnist.yaml
+      hash: md5
+      md5: 54ebc6d9c4162defcf0cbc1479ee6358
+      size: 358
+    - path: scripts/preprocess.py
+      hash: md5
+      md5: ff2dad52bd10c0c022192581f5786be6
+      size: 1251
+    - path: src/mnist_pipeline/data.py
+      hash: md5
+      md5: 3018c78b62cab5adc67dd4e6cdf2b7b3
+      size: 19031
+    params:
+      params.yaml:
+        data.mean: 0.1307
+        data.seed: 42
+        data.std: 0.3081
+        data.val_fraction: 0.1
+    outs:
+    - path: data/processed/split_metadata.json
+      hash: md5
+      md5: 1261c0889a5f75c59617c38f3c5ce00e
+      size: 1749
+    - path: data/processed/test.pt
+      hash: md5
+      md5: 86a1bd268c956f5f5aebe1e74c4ee5e1
+      size: 31441741
+    - path: data/processed/train.pt
+      hash: md5
+      md5: 5598b33b34351cc23cf54f0e7c9db0ca
+      size: 170209935
+    - path: data/processed/val.pt
+      hash: md5
+      md5: c93e6743b8a1ca202053af6228894d33
+      size: 18913917
+  train:
+    cmd: python scripts/train.py
+    deps:
+    - path: configs/config.yaml
+      hash: md5
+      md5: 886d4c37d168fca92e279f8a7370e666
+      size: 444
+    - path: configs/data/mnist.yaml
+      hash: md5
+      md5: 54ebc6d9c4162defcf0cbc1479ee6358
+      size: 358
+    - path: configs/model/cnn.yaml
+      hash: md5
+      md5: a456da8277ac27db1f9c70733a800c34
+      size: 281
+    - path: configs/train/default.yaml
+      hash: md5
+      md5: ec60a0140c92e15fe535f7cf6ee4bd51
+      size: 338
+    - path: configs/wandb/default.yaml
+      hash: md5
+      md5: 2caadce79728324a94b61ed09fda6ece
+      size: 141
+    - path: data/processed/train.pt
+      hash: md5
+      md5: 5598b33b34351cc23cf54f0e7c9db0ca
+      size: 170209935
+    - path: data/processed/val.pt
+      hash: md5
+      md5: c93e6743b8a1ca202053af6228894d33
+      size: 18913917
+    - path: scripts/train.py
+      hash: md5
+      md5: 2e3ba06c51a5aca83762fe8970970f46
+      size: 1121
+    - path: src/mnist_pipeline/model.py
+      hash: md5
+      md5: 5071f2afc6cf3b1b9617f1db580594bb
+      size: 11977
+    - path: src/mnist_pipeline/tracker.py
+      hash: md5
+      md5: 360434edbe604e12d6068a31ad732e29
+      size: 5479
+    - path: src/mnist_pipeline/train.py
+      hash: md5
+      md5: f1a32831db1d46ccd4e4f1ea02c5c817
+      size: 15825
+    params:
+      params.yaml:
+        data.batch_size: 128
+        model.conv_channels:
+        - 32
+        - 64
+        model.dropout: 0.25
+        model.hidden_dim: 128
+        model.in_channels: 1
+        model.kernel_size: 3
+        model.num_classes: 10
+        train.deterministic: true
+        train.epochs: 5
+        train.lr: 0.001
+        train.optimizer: adam
+        train.seed: 42
+        train.weight_decay: 0.0
+    outs:
+    - path: artifacts/checkpoints/checkpoint_best.pt
+      hash: md5
+      md5: 7587a89760903bdac0fe1ec066e627aa
+      size: 5087270
+    - path: artifacts/checkpoints/checkpoint_last.pt
+      hash: md5
+      md5: 21a7b2d2f0ce76ce701374469a2d386a
+      size: 5087270
+    - path: artifacts/checkpoints/config.json
+      hash: md5
+      md5: 1f3591444c1ea015834e17676f8ec1e5
+      size: 419
+    - path: artifacts/checkpoints/model.safetensors
+      hash: md5
+      md5: 3f493ecbfeea184f22d7e0c5dcf7f067
+      size: 1689640
+    - path: artifacts/reports/environment.json
+      hash: md5
+      md5: 820b617a7b16e4a02f6cdc328544ff53
+      size: 690
+    - path: artifacts/reports/train_history.csv
+      hash: md5
+      md5: 8e07108b6c5e7857b7ca1a1c23712882
+      size: 567
+  evaluate:
+    cmd: python scripts/evaluate.py
+    deps:
+    - path: artifacts/checkpoints/checkpoint_best.pt
+      hash: md5
+      md5: 7587a89760903bdac0fe1ec066e627aa
+      size: 5087270
+    - path: configs/config.yaml
+      hash: md5
+      md5: 886d4c37d168fca92e279f8a7370e666
+      size: 444
+    - path: configs/evaluate/default.yaml
+      hash: md5
+      md5: 0d9b43f8470fbce972b1dcb6733361d3
+      size: 454
+    - path: configs/model/cnn.yaml
+      hash: md5
+      md5: a456da8277ac27db1f9c70733a800c34
+      size: 281
+    - path: data/processed/test.pt
+      hash: md5
+      md5: 86a1bd268c956f5f5aebe1e74c4ee5e1
+      size: 31441741
+    - path: scripts/evaluate.py
+      hash: md5
+      md5: 39e77932fdb7059aa67a537018f5fec2
+      size: 1130
+    - path: src/mnist_pipeline/evaluate.py
+      hash: md5
+      md5: f06d98e097a973bbdeda94d3064f3dd9
+      size: 9444
+    - path: src/mnist_pipeline/metrics.py
+      hash: md5
+      md5: b0304e9278b56d1facb91ce3a4accf18
+      size: 5895
+    - path: src/mnist_pipeline/model.py
+      hash: md5
+      md5: 5071f2afc6cf3b1b9617f1db580594bb
+      size: 11977
+    params:
+      params.yaml:
+        evaluate.batch_size: 256
+    outs:
+    - path: artifacts/evaluation/classification_report.txt
+      hash: md5
+      md5: 1373c446846e6e434549eba14b9b69c0
+      size: 758
+    - path: artifacts/evaluation/confusion_matrix.csv
+      hash: md5
+      md5: 917012e7bd9d9582b8d79fadc95d6fe2
+      size: 385
+    - path: artifacts/evaluation/test_metrics.json
+      hash: md5
+      md5: 4c78c6f33ce43d0ac340cd9c9afb0791
+      size: 1528
+  benchmark:
+    cmd: python scripts/benchmark.py
+    deps:
+    - path: artifacts/checkpoints/checkpoint_best.pt
+      hash: md5
+      md5: 7587a89760903bdac0fe1ec066e627aa
+      size: 5087270
+    - path: configs/config.yaml
+      hash: md5
+      md5: 886d4c37d168fca92e279f8a7370e666
+      size: 444
+    - path: configs/evaluate/default.yaml
+      hash: md5
+      md5: 0d9b43f8470fbce972b1dcb6733361d3
+      size: 454
+    - path: configs/model/cnn.yaml
+      hash: md5
+      md5: a456da8277ac27db1f9c70733a800c34
+      size: 281
+    - path: scripts/benchmark.py
+      hash: md5
+      md5: 7c054e0fd7bd3d3596e505d77c1f8fd5
+      size: 1183
+    - path: src/mnist_pipeline/evaluate.py
+      hash: md5
+      md5: f06d98e097a973bbdeda94d3064f3dd9
+      size: 9444
+    - path: src/mnist_pipeline/model.py
+      hash: md5
+      md5: 5071f2afc6cf3b1b9617f1db580594bb
+      size: 11977
+    params:
+      params.yaml:
+        evaluate.benchmark_batch_sizes:
+        - 1
+        - 32
+        - 128
+        evaluate.benchmark_timed_runs: 50
+        evaluate.benchmark_warmup_runs: 10
+    outs:
+    - path: artifacts/benchmarks/benchmark_metrics.json
+      hash: md5
+      md5: f360e87a91df8ede557c5fefdc62d200
+      size: 760
+  report:
+    cmd: python scripts/generate_report.py
+    deps:
+    - path: artifacts/benchmarks/benchmark_metrics.json
+      hash: md5
+      md5: f360e87a91df8ede557c5fefdc62d200
+      size: 760
+    - path: artifacts/evaluation/confusion_matrix.csv
+      hash: md5
+      md5: 917012e7bd9d9582b8d79fadc95d6fe2
+      size: 385
+    - path: artifacts/evaluation/test_metrics.json
+      hash: md5
+      md5: 4c78c6f33ce43d0ac340cd9c9afb0791
+      size: 1528
+    - path: artifacts/reports/train_history.csv
+      hash: md5
+      md5: 8e07108b6c5e7857b7ca1a1c23712882
+      size: 567
+    - path: configs/config.yaml
+      hash: md5
+      md5: 886d4c37d168fca92e279f8a7370e666
+      size: 444
+    - path: configs/hf/default.yaml
+      hash: md5
+      md5: ed368f7d64786146e9ec5d8f13306e73
+      size: 176
+    - path: scripts/generate_report.py
+      hash: md5
+      md5: 4621bb9312af3833de730a870a552334
+      size: 1202
+    - path: src/mnist_pipeline/reporting.py
+      hash: md5
+      md5: 843f93ab70d289d29de549b4fe5e160e
+      size: 19806
+    - path: templates/dataset_card_template.md
+      hash: md5
+      md5: 746cf425ebb70a019c9afe74a4378fa8
+      size: 3692
+    - path: templates/model_card_template.md
+      hash: md5
+      md5: 9fab0ff3b61a96c03ea0b95193585976
+      size: 6552
+    outs:
+    - path: artifacts/reports/evaluation_report.md
+      hash: md5
+      md5: 593f1b6e876af45cb6f799e89bb3fac4
+      size: 2596
+    - path: artifacts/reports/plots/accuracy_curve.png
+      hash: md5
+      md5: e0437f3135e29991f6afddda7b1d27ac
+      size: 57182
+    - path: artifacts/reports/plots/confusion_matrix.png
+      hash: md5
+      md5: c8fef26c33980320fff9e944c0ec474d
+      size: 72720
+    - path: artifacts/reports/plots/loss_curve.png
+      hash: md5
+      md5: a69afefc3f09d92f08c884298d714236
+      size: 55627
+    - path: artifacts/reports/plots/sample_predictions.png
+      hash: md5
+      md5: 4dd69e3ff0a63f3bb41ae58c05e2ff36
+      size: 89585
+    - path: docs/dataset_card.md
+      hash: md5
+      md5: d278a169b1e2416eea0d6d2904992639
+      size: 2943
+    - path: docs/model_card.md
+      hash: md5
+      md5: 43f4f0cdf2c832e54f9c50df14fbc2a9
+      size: 5297

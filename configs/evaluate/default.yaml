@@ -1,11 +1,8 @@
-batch_size: 256
+batch_size: ${param:evaluate.batch_size, 256}
 checkpoint_path: artifacts/checkpoints/checkpoint_best.pt
-benchmark_warmup_runs: 10
-benchmark_timed_runs: 50
-benchmark_batch_sizes:
-  - 1
-  - 32
-  - 128
+benchmark_warmup_runs: ${param:evaluate.benchmark_warmup_runs, 10}
+benchmark_timed_runs: ${param:evaluate.benchmark_timed_runs, 50}
+benchmark_batch_sizes: ${param:evaluate.benchmark_batch_sizes, [1, 32, 128]}
 mve_min_val_accuracy: 0.985
 mve_min_test_accuracy: 0.985
 mve_min_macro_f1: 0.985

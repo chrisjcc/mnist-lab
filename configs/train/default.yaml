@@ -1,9 +1,9 @@
-epochs: 5
-lr: 0.001
-weight_decay: 0.0
-optimizer: adam
-seed: 42
-deterministic: true
+epochs: ${param:train.epochs, 5}
+lr: ${param:train.lr, 0.001}
+weight_decay: ${param:train.weight_decay, 0.0}
+optimizer: ${param:train.optimizer, adam}
+seed: ${param:train.seed, 42}
+deterministic: ${param:train.deterministic, true}
 device: auto
 resume_from: null
 early_stopping_patience: null

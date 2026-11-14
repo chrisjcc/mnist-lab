@@ -1,3 +1,9 @@
+# DVC experiment parameters.
+#
+# These values define the baseline/default parameter state for each
+# training algorithm. W&B sweeps will override these values on a
+# per-experiment basis without modifying configs/training/*.yaml.
+
 data:
   val_fraction: 0.1
   mean: 0.1307

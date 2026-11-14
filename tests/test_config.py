@@ -10,7 +10,9 @@ import torch
 from mnist_pipeline.config import (
     PipelineConfig,
     config_to_dict,
+    get_dvc_param,
     load_hydra_config,
+    load_params_dict,
     to_pipeline_config,
     validate_config,
 )
@@ -95,3 +97,92 @@ def test_seed_and_device_utilities(tmp_path: Path) -> None:
     json_path = save_json(meta, tmp_path / "env.json")
     loaded = load_json(json_path)
     assert loaded["seed"] == 123
+
+
+def test_params_yaml_ssot_resolver_and_overrides(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    custom_params = tmp_path / "custom_params.yaml"
+    custom_params.write_text(
+        "train:\n  lr: 0.0003\n  epochs: 8\ndata:\n  batch_size: 64\nmodel:\n  conv_channels: [16, 32]\n"
+    )
+    monkeypatch.setenv("MNIST_PARAMS_PATH", str(custom_params))
+
+    cfg = load_hydra_config(config_dir="configs", config_name="config")
+    assert cfg.train.lr == pytest.approx(0.0003)
+    assert cfg.train.epochs == 8
+    assert cfg.data.batch_size == 64
+    assert cfg.model.conv_channels == [16, 32]
+
+    # CLI overrides must still take precedence over params.yaml
+    cfg_override = load_hydra_config(
+        config_dir="configs",
+        config_name="config",
+        overrides=["train.lr=0.01", "train.epochs=12"],
+    )
+    assert cfg_override.train.lr == pytest.approx(0.01)
+    assert cfg_override.train.epochs == 12
+    # Non-overridden params must still come from custom_params.yaml
+    assert cfg_override.data.batch_size == 64
+
+
+def test_to_pipeline_config_merges_params_yaml(tmp_path: Path) -> None:
+    custom_params = tmp_path / "params.yaml"
+    custom_params.write_text("train:\n  lr: 0.0007\n  weight_decay: 0.0001\n")
+
+    # When given a partial dictionary, params.yaml provides defaults
+    cfg = to_pipeline_config({"train": {"epochs": 7}}, params_path=custom_params)
+    assert cfg.train.epochs == 7
+    assert cfg.train.lr == pytest.approx(0.0007)
+    assert cfg.train.weight_decay == pytest.approx(0.0001)
+
+
+def test_get_dvc_param_fallback_and_missing(tmp_path: Path) -> None:
+    non_existent = tmp_path / "missing.yaml"
+    val = get_dvc_param("train.non_existent", default=42, params_path=non_existent)
+    assert val == 42
+
+
+def test_invalid_yaml_syntax_raises_informative_error(tmp_path: Path) -> None:
+    bad_yaml = tmp_path / "corrupted_params.yaml"
+    bad_yaml.write_text("train:\n  lr: [unclosed list\n")
+
+    with pytest.raises(ValueError, match="Failed to parse parameter YAML file"):
+        load_params_dict(bad_yaml)
+
+
+def test_non_mapping_yaml_raises_error(tmp_path: Path) -> None:
+    scalar_yaml = tmp_path / "scalar_params.yaml"
+    scalar_yaml.write_text("- item1\n- item2\n")
+
+    with pytest.raises(ValueError, match="must be a mapping/dictionary, got list"):
+        load_params_dict(scalar_yaml)
+
+
+def test_missing_params_file_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    missing_file = tmp_path / "does_not_exist.yaml"
+
+    # Default policy allows fallback
+    assert load_params_dict(missing_file, require_file=False) == {}
+
+    # Strict policy raises FileNotFoundError
+    with pytest.raises(FileNotFoundError, match="Canonical parameter file .* was not found"):
+        load_params_dict(missing_file, require_file=True)
+
+    # Environment variable policy
+    monkeypatch.setenv("MNIST_REQUIRE_PARAMS", "1")
+    with pytest.raises(FileNotFoundError):
+        load_params_dict(missing_file)
+
+
+def test_cache_invalidation_on_content_change(tmp_path: Path) -> None:
+    params_file = tmp_path / "dynamic_params.yaml"
+    params_file.write_text("train:\n  lr: 0.001\n")
+
+    d1 = load_params_dict(params_file)
+    assert d1["train"]["lr"] == 0.001
+
+    # Modify file content (changes size and/or mtime_ns)
+    params_file.write_text("train:\n  lr: 0.0005\n")
+    d2 = load_params_dict(params_file)
+    assert d2["train"]["lr"] == 0.0005

@@ -1,9 +1,7 @@
 name: mnist_cnn
-in_channels: 1
-conv_channels:
-  - 32
-  - 64
-kernel_size: 3
-dropout: 0.25
-hidden_dim: 128
-num_classes: 10
+in_channels: ${param:model.in_channels, 1}
+conv_channels: ${param:model.conv_channels, [32, 64]}
+kernel_size: ${param:model.kernel_size, 3}
+dropout: ${param:model.dropout, 0.25}
+hidden_dim: ${param:model.hidden_dim, 128}
+num_classes: ${param:model.num_classes, 10}
