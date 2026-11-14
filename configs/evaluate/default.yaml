@@ -1,5 +1,5 @@
 batch_size: ${param:evaluate.batch_size, 256}
-checkpoint_path: artifacts/checkpoints/checkpoint_best.pt
+checkpoint_path: ${paths.checkpoints_dir}/checkpoint_best.pt
 benchmark_warmup_runs: ${param:evaluate.benchmark_warmup_runs, 10}
 benchmark_timed_runs: ${param:evaluate.benchmark_timed_runs, 50}
 benchmark_batch_sizes: ${param:evaluate.benchmark_batch_sizes, [1, 32, 128]}

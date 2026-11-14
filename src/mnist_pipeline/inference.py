@@ -8,9 +8,10 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import torch.nn as nn
 from PIL import Image, ImageOps
 
-from mnist_pipeline.model import MNISTConvNet, load_checkpoint
+from mnist_pipeline.model import MNISTConvNet, load_checkpoint, load_model_from_pretrained
 
 LOGGER = logging.getLogger(__name__)
 
@@ -116,7 +117,7 @@ def load_inference_model(
     revision: str = "main",
     cache_dir: str | Path | None = "artifacts/hf_cache",
     device: str | torch.device = "cpu",
-) -> tuple[MNISTConvNet, str]:
+) -> tuple[nn.Module, str]:
     """Load an `MNISTConvNet` for inference with resilient local and Hub fallback.
 
     Resolution order:
@@ -147,7 +148,7 @@ def load_inference_model(
         and (local_candidate / "model.safetensors").exists()
         and (local_candidate / "config.json").exists()
     ):
-        model = MNISTConvNet.from_pretrained(
+        model = load_model_from_pretrained(
             local_candidate,
             map_location=device,
         )
@@ -161,7 +162,7 @@ def load_inference_model(
     ckpt_path = Path(checkpoint_fallback)
     if ckpt_path.parent.exists() and (ckpt_path.parent / "model.safetensors").exists():
         try:
-            model = MNISTConvNet.from_pretrained(ckpt_path.parent, map_location=device)
+            model = load_model_from_pretrained(ckpt_path.parent, map_location=device)
             return model, f"local_safetensors:{ckpt_path.parent}"
         except Exception as exc:
             LOGGER.debug("Local safetensors load failed (%s); trying .pt checkpoint.", exc)
@@ -175,7 +176,7 @@ def load_inference_model(
             LOGGER.warning("Failed to load local checkpoint '%s': %s", ckpt_path, exc)
 
     try:
-        model = MNISTConvNet.from_pretrained(
+        model = load_model_from_pretrained(
             str(repo_id_or_path),
             revision=revision,
             cache_dir=cache_dir,
@@ -195,7 +196,7 @@ def load_inference_model(
 
 
 def predict_tensor(
-    model: MNISTConvNet,
+    model: nn.Module,
     image_tensor: torch.Tensor,
     device: str | torch.device = "cpu",
     mean: float = 0.1307,
@@ -204,7 +205,7 @@ def predict_tensor(
     """Run digit classification inference on a normalized `(1, 1, 28, 28)` or `(1, 28, 28)` tensor.
 
     Args:
-        model: Loaded `MNISTConvNet` instance.
+        model: Loaded PyTorch model instance.
         image_tensor: Normalized float32 tensor of shape `(1, 1, 28, 28)` or `(1, 28, 28)`.
         device: Target compute device.
         mean: Normalization mean (used to reconstruct `display_image`).
@@ -246,7 +247,7 @@ def predict_tensor(
 
 
 def predict_pil_image(
-    model: MNISTConvNet,
+    model: nn.Module,
     image: Image.Image,
     invert: bool = False,
     auto_invert: bool = False,
