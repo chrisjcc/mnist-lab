@@ -52,6 +52,8 @@ make setup
 ```
 
 > **Note**: The [`Makefile`](../Makefile) automatically detects an active Conda environment (`CONDA_PREFIX`) or a local `.venv` directory.
+>
+> **DVC Status**: DVC is already initialized in this repository (the `.dvc/` configuration directory and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once `make setup` finishes, you can immediately run `make dvc-repro` (or `dvc repro`).
 
 What `make setup` executes under the hood:
 

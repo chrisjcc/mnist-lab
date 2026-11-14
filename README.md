@@ -54,6 +54,9 @@ To run the full suite of capabilities coded in this repository (tracking experim
 
 ## 🚀 Quickstart
 
+> [!NOTE]
+> **DVC is already initialized** in this repository (`.dvc/` configuration and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once dependencies are installed via `make setup`, you can immediately run `make dvc-repro` (or `dvc repro`) to reproduce or verify stages.
+
 ```bash
 # 1. Create and activate a Conda environment (or Python venv) and install dependencies
 conda create -n mnist-lab python=3.11 -y
