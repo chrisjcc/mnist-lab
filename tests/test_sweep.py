@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from scripts.run_sweep_trial import build_hydra_overrides, parse_args, run_trial
 
 from mnist_pipeline.config import load_hydra_config
-from scripts.run_sweep_trial import build_hydra_overrides, parse_args, run_trial
 
 
 def test_build_hydra_overrides_alias_translation() -> None:
