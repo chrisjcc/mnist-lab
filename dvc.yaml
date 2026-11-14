@@ -28,14 +28,19 @@ stages:
       - configs/model/cnn.yaml
       - configs/train/default.yaml
     params:
+      - data.batch_size
+      - model.in_channels
       - model.conv_channels
+      - model.kernel_size
       - model.dropout
       - model.hidden_dim
+      - model.num_classes
       - train.epochs
       - train.lr
       - train.weight_decay
       - train.optimizer
       - train.seed
+      - train.deterministic
     outs:
       - artifacts/checkpoints/checkpoint_best.pt
       - artifacts/checkpoints/checkpoint_last.pt

@@ -1,13 +1,13 @@
 raw_dir: data/raw
 processed_dir: data/processed
 download: true
-val_fraction: 0.1
-mean: 0.1307
-std: 0.3081
-batch_size: 128
+val_fraction: ${param:data.val_fraction, 0.1}
+mean: ${param:data.mean, 0.1307}
+std: ${param:data.std, 0.3081}
+batch_size: ${param:data.batch_size, 128}
 num_workers: 0
 pin_memory: false
-seed: 42
+seed: ${param:data.seed, 42}
 allow_synthetic_fallback: false
 num_synthetic_train: 600
 num_synthetic_test: 100

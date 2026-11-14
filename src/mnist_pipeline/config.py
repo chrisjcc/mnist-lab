@@ -2,12 +2,105 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+import yaml
 from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig, OmegaConf
+
+_PARAMS_CACHE: dict[Path, dict[str, Any]] = {}
+
+
+def get_params_file_path(params_path: str | Path | None = None) -> Path | None:
+    """Locate the DVC params.yaml file across custom paths, environment variables, or repo roots.
+
+    Args:
+        params_path: Optional explicit path to the parameters file.
+
+    Returns:
+        Resolved Path to the parameters file if found, otherwise None.
+    """
+    if params_path is not None:
+        p = Path(params_path)
+        return p if p.is_file() else None
+
+    env_path = os.environ.get("MNIST_PARAMS_PATH") or os.environ.get("DVC_PARAMS_PATH")
+    if env_path:
+        p = Path(env_path)
+        if p.is_file():
+            return p
+
+    cwd_path = Path.cwd() / "params.yaml"
+    if cwd_path.is_file():
+        return cwd_path
+
+    repo_root_path = Path(__file__).resolve().parents[2] / "params.yaml"
+    if repo_root_path.is_file():
+        return repo_root_path
+
+    return None
+
+
+def load_params_dict(params_path: str | Path | None = None) -> dict[str, Any]:
+    """Load parameter dictionary from params.yaml with mtime-based caching.
+
+    Args:
+        params_path: Optional explicit path to the parameters file.
+
+    Returns:
+        Nested dictionary of parameters, or empty dict if file is not found.
+    """
+    target = get_params_file_path(params_path)
+    if target is None or not target.is_file():
+        return {}
+
+    mtime = target.stat().st_mtime
+    cached = _PARAMS_CACHE.get(target)
+    if cached is not None and cached.get("mtime") == mtime:
+        return cast(dict[str, Any], cached["data"])
+
+    try:
+        with open(target, encoding="utf-8") as f:
+            data = yaml.safe_load(f) or {}
+        if not isinstance(data, dict):
+            data = {}
+    except Exception:
+        data = {}
+
+    _PARAMS_CACHE[target] = {"mtime": mtime, "data": data}
+    return data
+
+
+def get_dvc_param(key: str, default: Any = None, params_path: str | Path | None = None) -> Any:
+    """Retrieve a dot-separated parameter value from params.yaml with fallback to default.
+
+    Args:
+        key: Dot-separated parameter path (e.g., 'train.lr', 'data.batch_size').
+        default: Fallback default value if parameter is not present.
+        params_path: Optional explicit path to params.yaml.
+
+    Returns:
+        Value from params.yaml if present, otherwise default.
+    """
+    params = load_params_dict(params_path)
+    cur: Any = params
+    for part in key.split("."):
+        if isinstance(cur, dict) and part in cur:
+            cur = cur[part]
+        else:
+            return default
+    return cur
+
+
+# Register custom resolvers for OmegaConf and Hydra
+try:
+    OmegaConf.register_new_resolver("param", get_dvc_param, replace=True)
+    OmegaConf.register_new_resolver("dvc_param", get_dvc_param, replace=True)
+except Exception:
+    pass
 
 
 @dataclass
@@ -296,11 +389,19 @@ def validate_config(cfg: PipelineConfig | DictConfig) -> None:
         )
 
 
-def to_pipeline_config(cfg: DictConfig | dict[str, Any] | PipelineConfig) -> PipelineConfig:
+def to_pipeline_config(
+    cfg: DictConfig | dict[str, Any] | PipelineConfig,
+    params_path: str | Path | None = None,
+) -> PipelineConfig:
     """Convert a Hydra DictConfig or raw dictionary into a validated PipelineConfig.
+
+    Integrates params.yaml as the Single Source of Truth: schema defaults are populated,
+    params.yaml values are layered, and explicit configuration dictionary overrides
+    take highest precedence.
 
     Args:
         cfg: Input configuration as DictConfig, dict, or PipelineConfig.
+        params_path: Optional explicit path to params.yaml.
 
     Returns:
         Validated PipelineConfig dataclass instance.
@@ -321,7 +422,13 @@ def to_pipeline_config(cfg: DictConfig | dict[str, Any] | PipelineConfig) -> Pip
     raw_dict.pop("hydra", None)
 
     structured_schema = OmegaConf.structured(PipelineConfig)
-    merged = OmegaConf.merge(structured_schema, raw_dict)
+    params_dict = load_params_dict(params_path)
+    if params_dict:
+        params_omega = OmegaConf.create(params_dict)
+        merged = OmegaConf.merge(structured_schema, params_omega, raw_dict)
+    else:
+        merged = OmegaConf.merge(structured_schema, raw_dict)
+
     obj = OmegaConf.to_object(merged)
     if not isinstance(obj, PipelineConfig):
         raise ValueError("Failed to materialize PipelineConfig from configuration.")
@@ -333,6 +440,7 @@ def load_hydra_config(
     config_dir: str | Path = "configs",
     config_name: str = "config",
     overrides: list[str] | None = None,
+    params_path: str | Path | None = None,
 ) -> PipelineConfig:
     """Load and validate a PipelineConfig using Hydra's Compose API.
 
@@ -340,6 +448,7 @@ def load_hydra_config(
         config_dir: Path to the directory containing Hydra YAML files.
         config_name: Name of the root configuration file (without .yaml).
         overrides: Optional list of Hydra CLI-style override strings.
+        params_path: Optional explicit path to params.yaml.
 
     Returns:
         Validated PipelineConfig instance.
@@ -347,7 +456,7 @@ def load_hydra_config(
     abs_config_dir = str(Path(config_dir).resolve())
     with initialize_config_dir(version_base="1.3", config_dir=abs_config_dir):
         hydra_cfg = compose(config_name=config_name, overrides=overrides or [])
-    return to_pipeline_config(hydra_cfg)
+    return to_pipeline_config(hydra_cfg, params_path=params_path)
 
 
 def config_to_dict(cfg: PipelineConfig | DictConfig) -> dict[str, Any]:
