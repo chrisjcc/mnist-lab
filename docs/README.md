@@ -66,4 +66,4 @@ make sweep-publish-hf SWEEP_ID=c6dont3r
 
 To keep this Git repository fast to clone and lightweight:
 - **Git Tracks**: Code (`src/`, `scripts/`, `tests/`, `app/`), configurations (`configs/`, `sweeps/`), documentation, Markdown reports, diagnostic `.png` figures, and small summary JSONs in `docs/`.
-- **Model Checkpoints**: Trained weights (`*.pt`, `*.safetensors`) and local trial runs in `/artifacts/` are ignored by Git ([`.gitignore`](../.gitignore)) and hosted on the **[Hugging Face Model Hub](https://huggingface.co/chrisjcc/mnist-classification)** and **Weights & Biases Model Registry**.
+- **Model Checkpoints**: Trained weights (`*.pt`, `*.safetensors`) and local trial runs in `/artifacts/` are ignored by Git ([`.gitignore`](../.gitignore)) and distributed via the **[Hugging Face Model Hub](https://huggingface.co/chrisjcc/mnist-classification)**, **[GitHub Releases](user_guide.md#10-attaching-trained-model-checkpoints-to-github-releases-offline-distribution)**, and **Weights & Biases Model Registry**.

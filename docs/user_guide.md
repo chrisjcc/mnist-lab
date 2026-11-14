@@ -15,6 +15,7 @@ This guide provides end-to-end instructions for setting up the environment, repr
 7. [Downloading the Trained Model from Hugging Face Hub and Running Inference](#7-downloading-the-trained-model-from-hugging-face-hub-and-running-inference)
 8. [Uploading the Model, Model Card, and Artifacts to Hugging Face Hub](#8-uploading-the-model-model-card-and-artifacts-to-hugging-face-hub)
 9. [Building and Deploying the Streamlit Demo as a Hugging Face Docker Space](#9-building-and-deploying-the-streamlit-demo-as-a-hugging-face-docker-space)
+10. [Attaching Trained Model Checkpoints to GitHub Releases (Offline Distribution)](#10-attaching-trained-model-checkpoints-to-github-releases-offline-distribution)
 
 ---
 
@@ -629,3 +630,82 @@ The repository includes `.github/workflows/deploy-hf-demo.yml`, which automatica
    - **Secret** `HF_TOKEN`: Your Hugging Face write token.
    - **Variable** `HF_SPACE_REPO`: Your Space repository ID (e.g., `chrisjcc/mnist-streamlit-demo`).
 3. Push to `main` or trigger the **Deploy Demo to Hugging Face Spaces** workflow in the GitHub Actions tab. The workflow injects `.github/hf_space_readme.md` (configured with `sdk: docker` and `app_port: 8501`) as the Space's `README.md` and force-pushes the clean application bundle to `https://huggingface.co/spaces/<HF_SPACE_REPO>`.
+
+---
+
+## 10. Attaching Trained Model Checkpoints to GitHub Releases (Offline Distribution)
+
+For enterprise clusters, air-gapped environments, or offline deployments without Hugging Face Hub access, trained model weights can be attached directly to GitHub Releases as binary release assets.
+
+Because `/artifacts/` is ignored by Git to avoid repository bloat, release assets are uploaded to GitHub's release CDN via the **GitHub CLI (`gh`)** without touching `.git` history or slowing down `git clone`.
+
+### Prerequisites
+
+- **GitHub CLI**: Ensure `gh` is installed (`brew install gh` on macOS, or `sudo apt install gh` on Linux).
+- **Authentication**: Authenticate with your GitHub account:
+  ```bash
+  gh auth login
+  ```
+- **Local Checkpoints**: Ensure model weights are generated in `artifacts/checkpoints/` via `make train` or promoted from a sweep via `make sweep-promote SWEEP_ID=<id>`.
+
+---
+
+### Step 10.1: Define the Release Tag & Upload Model Binaries
+
+Set your target release tag as a shell variable (e.g., `RELEASE_TAG="v0.1.1"` or dynamically resolve the latest Git tag):
+
+```bash
+# 1. Define target release tag
+RELEASE_TAG="v0.1.1"
+
+# Or automatically select the latest local Git tag:
+# RELEASE_TAG=$(git describe --tags --abbrev=0)
+
+# 2. Upload model weights, configuration, and PyTorch checkpoint to the release
+gh release upload "${RELEASE_TAG}" \
+  artifacts/checkpoints/checkpoint_best.pt \
+  artifacts/checkpoints/model.safetensors \
+  artifacts/checkpoints/config.json \
+  --clobber
+```
+
+> **Note on `--clobber`**: The `--clobber` flag ensures that if an asset with the same name already exists on that release, it is safely overwritten with the latest version.
+
+---
+
+### Step 10.2: Optional — Generate and Attach SHA-256 Checksums
+
+To allow downstream users to verify file integrity after downloading:
+
+```bash
+# Generate SHA-256 checksums
+(cd artifacts/checkpoints && sha256sum checkpoint_best.pt model.safetensors config.json > SHA256SUMS.txt)
+
+# Upload checksum manifest to the release
+gh release upload "${RELEASE_TAG}" artifacts/checkpoints/SHA256SUMS.txt --clobber
+```
+
+---
+
+### Step 10.3: How Downstream Users Download Release Checkpoints
+
+Once uploaded, anyone can download the weights without cloning the repository or authenticating with Hugging Face:
+
+#### Option A: Direct Download via GitHub CLI
+
+```bash
+# Download all assets attached to the release into artifacts/checkpoints/
+gh release download "${RELEASE_TAG}" --dir artifacts/checkpoints/
+```
+
+#### Option B: Direct Download via `curl` / `wget`
+
+```bash
+# Download inference SafeTensors and configuration directly from GitHub's CDN
+curl -LO "https://github.com/chrisjcc/mnist-lab/releases/download/${RELEASE_TAG}/model.safetensors"
+curl -LO "https://github.com/chrisjcc/mnist-lab/releases/download/${RELEASE_TAG}/config.json"
+```
+
+#### Option C: Web Browser
+Navigate to `https://github.com/chrisjcc/mnist-lab/releases/tag/<RELEASE_TAG>` and click any file in the **Assets** list.
+
