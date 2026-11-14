@@ -1,76 +1,76 @@
 {
-  "test_loss": 2.24964,
-  "test_acc": 0.2293,
-  "macro_precision": 0.322509,
-  "macro_recall": 0.229238,
-  "macro_f1": 0.163058,
-  "weighted_precision": 0.33805,
-  "weighted_recall": 0.2293,
-  "weighted_f1": 0.164722,
+  "test_loss": 0.030525,
+  "test_acc": 0.9904,
+  "macro_precision": 0.990286,
+  "macro_recall": 0.990324,
+  "macro_f1": 0.990302,
+  "weighted_precision": 0.990404,
+  "weighted_recall": 0.9904,
+  "weighted_f1": 0.990399,
   "num_samples": 10000,
   "per_class": {
     "0": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1": 0.0,
+      "precision": 0.991853,
+      "recall": 0.993878,
+      "f1": 0.992864,
       "support": 980
     },
     "1": {
-      "precision": 1.0,
-      "recall": 0.069604,
-      "f1": 0.130148,
+      "precision": 0.995595,
+      "recall": 0.995595,
+      "f1": 0.995595,
       "support": 1135
     },
     "2": {
-      "precision": 0.777778,
-      "recall": 0.033915,
-      "f1": 0.064995,
+      "precision": 0.988395,
+      "recall": 0.99031,
+      "f1": 0.989351,
       "support": 1032
     },
     "3": {
-      "precision": 0.578544,
-      "recall": 0.448515,
-      "f1": 0.505298,
+      "precision": 0.992048,
+      "recall": 0.988119,
+      "f1": 0.990079,
       "support": 1010
     },
     "4": {
-      "precision": 0.215686,
-      "recall": 0.033605,
-      "f1": 0.05815,
+      "precision": 0.992886,
+      "recall": 0.994908,
+      "f1": 0.993896,
       "support": 982
     },
     "5": {
-      "precision": 0.136507,
-      "recall": 0.389013,
-      "f1": 0.202097,
+      "precision": 0.985475,
+      "recall": 0.988789,
+      "f1": 0.987129,
       "support": 892
     },
     "6": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1": 0.0,
+      "precision": 0.987513,
+      "recall": 0.990605,
+      "f1": 0.989057,
       "support": 958
     },
     "7": {
-      "precision": 0.322022,
-      "recall": 0.867704,
-      "f1": 0.469721,
+      "precision": 0.987391,
+      "recall": 0.990272,
+      "f1": 0.98883,
       "support": 1028
     },
     "8": {
-      "precision": 0.068966,
-      "recall": 0.002053,
-      "f1": 0.003988,
+      "precision": 0.989691,
+      "recall": 0.985626,
+      "f1": 0.987654,
       "support": 974
     },
     "9": {
-      "precision": 0.12559,
-      "recall": 0.447968,
-      "f1": 0.196181,
+      "precision": 0.992016,
+      "recall": 0.985134,
+      "f1": 0.988563,
       "support": 1009
     }
   },
   "checkpoint_path": "artifacts/checkpoints/checkpoint_best.pt",
-  "checkpoint_epoch": 1,
+  "checkpoint_epoch": 5,
   "device": "cpu"
 }

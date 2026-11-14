@@ -76,13 +76,26 @@ Summary distribution across the 5 search trials:
 
 Diagnostic figures generated during pipeline evaluation:
 
-### 5.1 Training & Validation Convergence Curves
+### 5.1 Training & Validation Convergence Progression
+
+| Epoch | Train Loss | Train Accuracy (%) | Validation Loss | Validation Accuracy (%) | Learning Rate | Epoch Time (s) | Checkpoint Status |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **1** | `0.3349` | `89.44%` | `0.0826` | `97.42%` | `0.000474` | `21.35` | Saved (`[BEST]`) |
+| **2** | `0.0971` | `97.02%` | `0.0611` | `97.98%` | `0.000474` | `21.24` | Saved (`[BEST]`) |
+| **3** | `0.0723` | `97.75%` | `0.0472` | `98.50%` | `0.000474` | `20.44` | Saved (`[BEST]`) |
+| **4** | `0.0556` | `98.27%` | `0.0418` | `98.65%` | `0.000474` | `30.01` | Saved (`[BEST]`) |
+| **5** | `0.0502` | `98.46%` | `0.0399` | **`98.77%`** | `0.000474` | `25.50` | **Champion (`checkpoint_best.pt`)** |
 
 | Cross-Entropy Loss Curve | Classification Accuracy Curve |
 | :---: | :---: |
 | ![Loss Curve](figures/sweep/loss_curve.png) | ![Accuracy Curve](figures/sweep/accuracy_curve.png) |
 
 ### 5.2 Held-Out Test Evaluation & Sample Predictions
+
+The champion model was evaluated across all 10,000 held-out test samples:
+- **Test Accuracy**: **`99.04%`** (`0.9904`)
+- **Macro F1-Score**: **`0.9903`**
+- **Test Cross-Entropy Loss**: **`0.0305`**
 
 | Held-Out Test Set Confusion Matrix (10x10) | Sample Predictions on Test Digits (4x4) |
 | :---: | :---: |
