@@ -30,16 +30,16 @@ model-index:
           split: test
         metrics:
           - type: accuracy
-            value: 0.9893
+            value: 0.2293
             name: Test Accuracy
           - type: f1
-            value: 0.9892
+            value: 0.1631
             name: Macro F1
           - type: precision
-            value: 0.9892
+            value: 0.3225
             name: Macro Precision
           - type: recall
-            value: 0.9893
+            value: 0.2292
             name: Macro Recall
 ---
 
@@ -96,27 +96,27 @@ model-index:
 
 | Metric | Value |
 | :--- | :--- |
-| **Test Accuracy** | **0.9893 (98.93%)** |
-| **Test Cross-Entropy Loss** | `0.0315` |
-| **Macro Precision** | `0.9892` |
-| **Macro Recall** | `0.9893` |
-| **Macro F1-Score** | `0.9892` |
-| **Weighted F1-Score** | `0.9893` |
+| **Test Accuracy** | **0.2293 (22.93%)** |
+| **Test Cross-Entropy Loss** | `2.2496` |
+| **Macro Precision** | `0.3225` |
+| **Macro Recall** | `0.2292` |
+| **Macro F1-Score** | `0.1631` |
+| **Weighted F1-Score** | `0.1647` |
 
 ### Per-Class Performance (`0`–`9`)
 
 | Digit Class | Precision | Recall | F1-Score | Support |
 | :---: | :---: | :---: | :---: | :---: |
-| **Digit 0** | 0.9858 | 0.9949 | 0.9903 | 980 |
-| **Digit 1** | 0.9938 | 0.9938 | 0.9938 | 1135 |
-| **Digit 2** | 0.9799 | 0.9922 | 0.9860 | 1032 |
-| **Digit 3** | 0.9970 | 0.9871 | 0.9920 | 1010 |
-| **Digit 4** | 0.9939 | 0.9949 | 0.9944 | 982 |
-| **Digit 5** | 0.9866 | 0.9910 | 0.9888 | 892 |
-| **Digit 6** | 0.9844 | 0.9906 | 0.9875 | 958 |
-| **Digit 7** | 0.9883 | 0.9835 | 0.9859 | 1028 |
-| **Digit 8** | 0.9887 | 0.9846 | 0.9866 | 974 |
-| **Digit 9** | 0.9940 | 0.9802 | 0.9870 | 1009 |
+| **Digit 0** | 0.0000 | 0.0000 | 0.0000 | 980 |
+| **Digit 1** | 1.0000 | 0.0696 | 0.1301 | 1135 |
+| **Digit 2** | 0.7778 | 0.0339 | 0.0650 | 1032 |
+| **Digit 3** | 0.5785 | 0.4485 | 0.5053 | 1010 |
+| **Digit 4** | 0.2157 | 0.0336 | 0.0582 | 982 |
+| **Digit 5** | 0.1365 | 0.3890 | 0.2021 | 892 |
+| **Digit 6** | 0.0000 | 0.0000 | 0.0000 | 958 |
+| **Digit 7** | 0.3220 | 0.8677 | 0.4697 | 1028 |
+| **Digit 8** | 0.0690 | 0.0021 | 0.0040 | 974 |
+| **Digit 9** | 0.1256 | 0.4480 | 0.1962 | 1009 |
 
 
 ---
@@ -127,9 +127,9 @@ Measured over `50` timed forward passes following `10` warm-up runs on device `c
 
 | Batch Size | Mean Latency (ms) | Std (ms) | P50 Latency (ms) | P95 Latency (ms) | P99 Latency (ms) | Throughput (samples/sec) |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1** | 0.214 | 0.011 | 0.209 | 0.236 | 0.242 | 4662.6 |
-| **32** | 2.368 | 0.391 | 2.221 | 3.355 | 3.725 | 13515.5 |
-| **128** | 7.999 | 0.686 | 7.945 | 9.610 | 9.898 | 16002.5 |
+| **1** | 0.309 | 0.121 | 0.280 | 0.607 | 0.682 | 3236.2 |
+| **32** | 2.695 | 0.231 | 2.693 | 3.041 | 3.231 | 11875.0 |
+| **128** | 7.250 | 0.284 | 7.246 | 7.756 | 7.818 | 17656.0 |
 
 
 ---

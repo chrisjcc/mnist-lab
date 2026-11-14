@@ -1,0 +1,118 @@
+{
+  "sweep_id": "c6dont3r",
+  "project": "mnist-classification",
+  "entity": "rl4aa",
+  "updated_at": "2026-11-14T02:29:22.607989+00:00",
+  "trials": [
+    {
+      "run_id": "h50ja9pk",
+      "run_name": "avid-sweep-1",
+      "sweep_id": "c6dont3r",
+      "params": {
+        "epochs": 5,
+        "dropout": 0.28462718739307535,
+        "optimizer": "sgd",
+        "batch_size": 128,
+        "weight_decay": 0.0006016918637825511,
+        "learning_rate": 0.00713236017845209
+      },
+      "best_val_accuracy": 0.987,
+      "best_val_loss": 0.04432580004135767,
+      "best_epoch": 4,
+      "total_epochs": 5,
+      "duration_seconds": 75.0,
+      "checkpoint_path": "artifacts/sweeps/c6dont3r/h50ja9pk/checkpoint_best.pt",
+      "history_path": null,
+      "wandb_url": "https://forge.coreweave.com/wandb/rl4aa/mnist-classification/runs/h50ja9pk",
+      "timestamp": "2026-11-14T01:51:31Z"
+    },
+    {
+      "run_id": "us12wo0x",
+      "run_name": "peachy-sweep-2",
+      "sweep_id": "c6dont3r",
+      "params": {
+        "epochs": 5,
+        "dropout": 0.42095798208338575,
+        "optimizer": "sgd",
+        "batch_size": 128,
+        "weight_decay": 0.00018115330207175103,
+        "learning_rate": 0.002475658676698941
+      },
+      "best_val_accuracy": 0.9821666666666666,
+      "best_val_loss": 0.06149312021334966,
+      "best_epoch": 5,
+      "total_epochs": 5,
+      "duration_seconds": 86.0,
+      "checkpoint_path": "artifacts/sweeps/c6dont3r/us12wo0x/checkpoint_best.pt",
+      "history_path": null,
+      "wandb_url": "https://forge.coreweave.com/wandb/rl4aa/mnist-classification/runs/us12wo0x",
+      "timestamp": "2026-11-14T01:52:56Z"
+    },
+    {
+      "run_id": "o1x4cay3",
+      "run_name": "spring-sweep-3",
+      "sweep_id": "c6dont3r",
+      "params": {
+        "epochs": 5,
+        "dropout": 0.3104537207675378,
+        "optimizer": "adamw",
+        "batch_size": 256,
+        "weight_decay": 3.216241713647447e-05,
+        "learning_rate": 0.0033217834167899372
+      },
+      "best_val_accuracy": 0.9861666666666666,
+      "best_val_loss": 0.04852477010091146,
+      "best_epoch": 5,
+      "total_epochs": 5,
+      "duration_seconds": 80.0,
+      "checkpoint_path": "artifacts/sweeps/c6dont3r/o1x4cay3/checkpoint_best.pt",
+      "history_path": null,
+      "wandb_url": "https://forge.coreweave.com/wandb/rl4aa/mnist-classification/runs/o1x4cay3",
+      "timestamp": "2026-11-14T01:54:32Z"
+    },
+    {
+      "run_id": "r2009xy3",
+      "run_name": "copper-sweep-4",
+      "sweep_id": "c6dont3r",
+      "params": {
+        "epochs": 5,
+        "dropout": 0.44199548658058896,
+        "optimizer": "adamw",
+        "batch_size": 128,
+        "weight_decay": 4.650977834338866e-06,
+        "learning_rate": 0.0008788604001856217
+      },
+      "best_val_accuracy": 0.9875,
+      "best_val_loss": 0.046076949814955394,
+      "best_epoch": 5,
+      "total_epochs": 5,
+      "duration_seconds": 80.0,
+      "checkpoint_path": "artifacts/sweeps/c6dont3r/r2009xy3/checkpoint_best.pt",
+      "history_path": null,
+      "wandb_url": "https://forge.coreweave.com/wandb/rl4aa/mnist-classification/runs/r2009xy3",
+      "timestamp": "2026-11-14T01:56:03Z"
+    },
+    {
+      "run_id": "lkylhv40",
+      "run_name": "stellar-sweep-5",
+      "sweep_id": "c6dont3r",
+      "params": {
+        "epochs": 5,
+        "dropout": 0.19755322696695937,
+        "optimizer": "adam",
+        "batch_size": 256,
+        "weight_decay": 0.0007675838608259235,
+        "learning_rate": 0.00047354245728168347
+      },
+      "best_val_accuracy": 0.9876666666666668,
+      "best_val_loss": 0.03987852170070012,
+      "best_epoch": 5,
+      "total_epochs": 5,
+      "duration_seconds": 72.0,
+      "checkpoint_path": "artifacts/sweeps/c6dont3r/lkylhv40/checkpoint_best.pt",
+      "history_path": null,
+      "wandb_url": "https://forge.coreweave.com/wandb/rl4aa/mnist-classification/runs/lkylhv40",
+      "timestamp": "2026-11-14T01:57:33Z"
+    }
+  ]
+}
