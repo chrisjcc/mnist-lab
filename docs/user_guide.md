@@ -369,15 +369,28 @@ make sweep-smoke
 - **Trial Isolation & Checkpoint Preservation**: Every completed trial's checkpoint is isolated in `artifacts/sweeps/<sweep_id>/<run_id>/checkpoint_best.pt` along with its training history, preventing subsequent trials from overwriting earlier candidates.
 - **Local Sweep Ledger**: Each trial appends its metrics and hyperparameters to `artifacts/sweeps/<sweep_id>/trials.json`.
 
-#### 3. Local Sweep Reporting
+#### 3. Sweep Report & Champion Promotion Quick Reference
+
+```bash
+# 1. Generate or refresh the local Markdown sweep report
+make sweep-report [SWEEP_ID=<id>]
+
+# 2. Promote champion model locally (updates checkpoint, params.yaml, test eval & model card)
+make sweep-promote [SWEEP_ID=<id>]
+
+# 3. Promote champion model and release directly to Hugging Face Hub
+make sweep-publish-hf [SWEEP_ID=<id>] [DRY_RUN=true]
+```
+
+#### 4. Local Sweep Reporting
 
 After or during a sweep, generate a Markdown leaderboard report detailing champion metrics, trial rankings, and hyperparameter sensitivity:
 
 ```bash
-# Generate report for the most recent sweep
+# Generate report for the most recent sweep automatically
 make sweep-report
 
-# Or generate for a specific sweep ID
+# Or generate for a specific sweep ID (e.g., c6dont3r)
 make sweep-report SWEEP_ID=c6dont3r
 ```
 
@@ -385,7 +398,7 @@ Output:
 - `artifacts/sweeps/<sweep_id>/sweep_report.md`
 - `artifacts/reports/sweep_report.md` (mirrored canonical report)
 
-#### 4. Extracting and Promoting the Champion Model to Production & Hugging Face
+#### 5. Extracting and Promoting the Champion Model to Production & Hugging Face
 
 To extract the highest-performing model from a sweep, synchronize your pipeline's Single Source of Truth (`params.yaml`), run held-out test evaluation, update `docs/model_card.md`, and release to Hugging Face Hub:
 
