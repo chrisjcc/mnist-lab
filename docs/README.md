@@ -15,6 +15,7 @@ Welcome to the documentation hub for **MNIST Lab**, a production-grade, reproduc
 | **Dataset Card** | [`dataset_card.md`](dataset_card.md) | Dataset curation, deterministic stratified splits (54k/6k/10k), and preprocessing specs |
 | **Baseline Study** | [`experiments/mve_baseline_study.md`](experiments/mve_baseline_study.md) | Minimum Viable Experiment (MVE-001) results & 5/5 quantitative acceptance gates |
 | **Sweep Study** | [`experiments/sweep_study.md`](experiments/sweep_study.md) | Bayesian hyperparameter search study (`c6dont3r`), Hyperband early stopping & champion analysis |
+| **Research & Feasibility** | [`research/transformer_mnist_feasibility_study.md`](research/transformer_mnist_feasibility_study.md) | Vision Transformer (ViT) vs. CNN comparative feasibility study & integration blueprint |
 
 ---
 
