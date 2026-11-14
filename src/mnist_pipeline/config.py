@@ -5,13 +5,21 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import yaml
 from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig, OmegaConf
 
-_PARAMS_CACHE: dict[Path, dict[str, Any]] = {}
+
+@dataclass(frozen=True)
+class _ParamsCacheEntry:
+    mtime_ns: int
+    size: int
+    data: dict[str, Any]
+
+
+_PARAMS_CACHE: dict[Path, _ParamsCacheEntry] = {}
 
 
 def get_params_file_path(params_path: str | Path | None = None) -> Path | None:
@@ -44,33 +52,66 @@ def get_params_file_path(params_path: str | Path | None = None) -> Path | None:
     return None
 
 
-def load_params_dict(params_path: str | Path | None = None) -> dict[str, Any]:
-    """Load parameter dictionary from params.yaml with mtime-based caching.
+def load_params_dict(
+    params_path: str | Path | None = None,
+    require_file: bool | None = None,
+) -> dict[str, Any]:
+    """Load parameter dictionary from params.yaml with nanosecond mtime and size caching.
 
     Args:
         params_path: Optional explicit path to the parameters file.
+        require_file: Whether the parameters file is strictly required. If None, checks the
+            `MNIST_REQUIRE_PARAMS` environment variable (default: False).
 
     Returns:
-        Nested dictionary of parameters, or empty dict if file is not found.
+        Nested dictionary of parameters, or empty dict if file is not found and not required.
+
+    Raises:
+        FileNotFoundError: If the parameter file is required but cannot be found.
+        ValueError: If the file contains invalid YAML syntax or does not parse into a mapping.
+        OSError: If an operating system error occurs while reading the file.
     """
+    if require_file is None:
+        require_file = os.environ.get("MNIST_REQUIRE_PARAMS", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+
     target = get_params_file_path(params_path)
     if target is None or not target.is_file():
+        if require_file:
+            target_desc = str(params_path) if params_path is not None else "params.yaml"
+            raise FileNotFoundError(
+                f"Canonical parameter file '{target_desc}' was not found. "
+                "Set MNIST_REQUIRE_PARAMS=0 to allow fallback to schema defaults."
+            )
         return {}
 
-    mtime = target.stat().st_mtime
+    stat_res = target.stat()
+    mtime_ns = stat_res.st_mtime_ns
+    size = stat_res.st_size
+
     cached = _PARAMS_CACHE.get(target)
-    if cached is not None and cached.get("mtime") == mtime:
-        return cast(dict[str, Any], cached["data"])
+    if cached is not None and cached.mtime_ns == mtime_ns and cached.size == size:
+        return cached.data
 
     try:
         with open(target, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
-        if not isinstance(data, dict):
-            data = {}
-    except Exception:
-        data = {}
+            data = yaml.safe_load(f)
+    except yaml.YAMLError as exc:
+        raise ValueError(f"Failed to parse parameter YAML file at '{target}': {exc}") from exc
+    except OSError as exc:
+        raise OSError(f"Failed to read parameter file at '{target}': {exc}") from exc
 
-    _PARAMS_CACHE[target] = {"mtime": mtime, "data": data}
+    if data is None:
+        data = {}
+    elif not isinstance(data, dict):
+        raise ValueError(
+            f"Parameter file at '{target}' must be a mapping/dictionary, got {type(data).__name__}."
+        )
+
+    _PARAMS_CACHE[target] = _ParamsCacheEntry(mtime_ns=mtime_ns, size=size, data=data)
     return data
 
 
@@ -84,6 +125,10 @@ def get_dvc_param(key: str, default: Any = None, params_path: str | Path | None 
 
     Returns:
         Value from params.yaml if present, otherwise default.
+
+    Raises:
+        ValueError: If params.yaml contains invalid YAML syntax or is not a mapping.
+        FileNotFoundError: If params.yaml is missing and strictly required.
     """
     params = load_params_dict(params_path)
     cur: Any = params
@@ -392,6 +437,7 @@ def validate_config(cfg: PipelineConfig | DictConfig) -> None:
 def to_pipeline_config(
     cfg: DictConfig | dict[str, Any] | PipelineConfig,
     params_path: str | Path | None = None,
+    require_params: bool | None = None,
 ) -> PipelineConfig:
     """Convert a Hydra DictConfig or raw dictionary into a validated PipelineConfig.
 
@@ -402,6 +448,7 @@ def to_pipeline_config(
     Args:
         cfg: Input configuration as DictConfig, dict, or PipelineConfig.
         params_path: Optional explicit path to params.yaml.
+        require_params: Whether params.yaml is strictly required to exist.
 
     Returns:
         Validated PipelineConfig dataclass instance.
@@ -422,7 +469,7 @@ def to_pipeline_config(
     raw_dict.pop("hydra", None)
 
     structured_schema = OmegaConf.structured(PipelineConfig)
-    params_dict = load_params_dict(params_path)
+    params_dict = load_params_dict(params_path, require_file=require_params)
     if params_dict:
         params_omega = OmegaConf.create(params_dict)
         merged = OmegaConf.merge(structured_schema, params_omega, raw_dict)
@@ -441,6 +488,7 @@ def load_hydra_config(
     config_name: str = "config",
     overrides: list[str] | None = None,
     params_path: str | Path | None = None,
+    require_params: bool | None = None,
 ) -> PipelineConfig:
     """Load and validate a PipelineConfig using Hydra's Compose API.
 
@@ -449,6 +497,7 @@ def load_hydra_config(
         config_name: Name of the root configuration file (without .yaml).
         overrides: Optional list of Hydra CLI-style override strings.
         params_path: Optional explicit path to params.yaml.
+        require_params: Whether params.yaml is strictly required to exist.
 
     Returns:
         Validated PipelineConfig instance.
@@ -456,7 +505,7 @@ def load_hydra_config(
     abs_config_dir = str(Path(config_dir).resolve())
     with initialize_config_dir(version_base="1.3", config_dir=abs_config_dir):
         hydra_cfg = compose(config_name=config_name, overrides=overrides or [])
-    return to_pipeline_config(hydra_cfg, params_path=params_path)
+    return to_pipeline_config(hydra_cfg, params_path=params_path, require_params=require_params)
 
 
 def config_to_dict(cfg: PipelineConfig | DictConfig) -> dict[str, Any]:

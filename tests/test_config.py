@@ -12,6 +12,7 @@ from mnist_pipeline.config import (
     config_to_dict,
     get_dvc_param,
     load_hydra_config,
+    load_params_dict,
     to_pipeline_config,
     validate_config,
 )
@@ -140,3 +141,48 @@ def test_get_dvc_param_fallback_and_missing(tmp_path: Path) -> None:
     non_existent = tmp_path / "missing.yaml"
     val = get_dvc_param("train.non_existent", default=42, params_path=non_existent)
     assert val == 42
+
+
+def test_invalid_yaml_syntax_raises_informative_error(tmp_path: Path) -> None:
+    bad_yaml = tmp_path / "corrupted_params.yaml"
+    bad_yaml.write_text("train:\n  lr: [unclosed list\n")
+
+    with pytest.raises(ValueError, match="Failed to parse parameter YAML file"):
+        load_params_dict(bad_yaml)
+
+
+def test_non_mapping_yaml_raises_error(tmp_path: Path) -> None:
+    scalar_yaml = tmp_path / "scalar_params.yaml"
+    scalar_yaml.write_text("- item1\n- item2\n")
+
+    with pytest.raises(ValueError, match="must be a mapping/dictionary, got list"):
+        load_params_dict(scalar_yaml)
+
+
+def test_missing_params_file_policy(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    missing_file = tmp_path / "does_not_exist.yaml"
+
+    # Default policy allows fallback
+    assert load_params_dict(missing_file, require_file=False) == {}
+
+    # Strict policy raises FileNotFoundError
+    with pytest.raises(FileNotFoundError, match="Canonical parameter file .* was not found"):
+        load_params_dict(missing_file, require_file=True)
+
+    # Environment variable policy
+    monkeypatch.setenv("MNIST_REQUIRE_PARAMS", "1")
+    with pytest.raises(FileNotFoundError):
+        load_params_dict(missing_file)
+
+
+def test_cache_invalidation_on_content_change(tmp_path: Path) -> None:
+    params_file = tmp_path / "dynamic_params.yaml"
+    params_file.write_text("train:\n  lr: 0.001\n")
+
+    d1 = load_params_dict(params_file)
+    assert d1["train"]["lr"] == 0.001
+
+    # Modify file content (changes size and/or mtime_ns)
+    params_file.write_text("train:\n  lr: 0.0005\n")
+    d2 = load_params_dict(params_file)
+    assert d2["train"]["lr"] == 0.0005

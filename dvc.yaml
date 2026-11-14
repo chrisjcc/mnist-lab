@@ -4,6 +4,7 @@ stages:
     deps:
       - scripts/preprocess.py
       - src/mnist_pipeline/data.py
+      - configs/config.yaml
       - configs/data/mnist.yaml
     params:
       - data.val_fraction
@@ -25,8 +26,11 @@ stages:
       - src/mnist_pipeline/tracker.py
       - data/processed/train.pt
       - data/processed/val.pt
+      - configs/config.yaml
+      - configs/data/mnist.yaml
       - configs/model/cnn.yaml
       - configs/train/default.yaml
+      - configs/wandb/default.yaml
     params:
       - data.batch_size
       - model.in_channels
@@ -55,8 +59,11 @@ stages:
       - scripts/evaluate.py
       - src/mnist_pipeline/evaluate.py
       - src/mnist_pipeline/metrics.py
+      - src/mnist_pipeline/model.py
       - artifacts/checkpoints/checkpoint_best.pt
       - data/processed/test.pt
+      - configs/config.yaml
+      - configs/model/cnn.yaml
       - configs/evaluate/default.yaml
     params:
       - evaluate.batch_size
@@ -72,7 +79,10 @@ stages:
     deps:
       - scripts/benchmark.py
       - src/mnist_pipeline/evaluate.py
+      - src/mnist_pipeline/model.py
       - artifacts/checkpoints/checkpoint_best.pt
+      - configs/config.yaml
+      - configs/model/cnn.yaml
       - configs/evaluate/default.yaml
     params:
       - evaluate.benchmark_warmup_runs
@@ -87,6 +97,8 @@ stages:
     deps:
       - scripts/generate_report.py
       - src/mnist_pipeline/reporting.py
+      - configs/config.yaml
+      - configs/hf/default.yaml
       - artifacts/reports/train_history.csv
       - artifacts/evaluation/test_metrics.json
       - artifacts/evaluation/confusion_matrix.csv
@@ -100,5 +112,7 @@ stages:
       - artifacts/reports/plots/sample_predictions.png
     outs:
       - artifacts/reports/evaluation_report.md
-      - docs/model_card.md
-      - docs/dataset_card.md
+      - docs/model_card.md:
+          cache: false
+      - docs/dataset_card.md:
+          cache: false
