@@ -181,8 +181,9 @@ def promote_champion(
 
     # 1. Promote Checkpoint
     repo_root = Path(__file__).resolve().parent.parent
-    trial_ckpt = Path(
-        champion.get("checkpoint_path", sweep_dir / champion_run_id / "checkpoint_best.pt")
+    ckpt_raw = champion.get("checkpoint_path")
+    trial_ckpt = (
+        Path(ckpt_raw) if ckpt_raw else (sweep_dir / champion_run_id / "checkpoint_best.pt")
     )
     if not trial_ckpt.exists():
         fallback_ckpt = repo_root / "artifacts" / "checkpoints" / "checkpoint_best.pt"
@@ -199,18 +200,24 @@ def promote_champion(
     canonical_ckpt_dir = repo_root / "artifacts" / "checkpoints"
     canonical_ckpt_dir.mkdir(parents=True, exist_ok=True)
     canonical_ckpt = canonical_ckpt_dir / "checkpoint_best.pt"
-    shutil.copy2(trial_ckpt, canonical_ckpt)
-    LOGGER.info("Promoted checkpoint -> %s", canonical_ckpt)
+    if trial_ckpt.resolve() != canonical_ckpt.resolve():
+        shutil.copy2(trial_ckpt, canonical_ckpt)
+        LOGGER.info("Promoted checkpoint -> %s", canonical_ckpt)
+    else:
+        LOGGER.info("Checkpoint already in place at %s", canonical_ckpt)
 
     # Promote train history if available
-    trial_hist = Path(
-        champion.get("history_path", sweep_dir / champion_run_id / "train_history.csv")
-    )
+    hist_raw = champion.get("history_path")
+    trial_hist = Path(hist_raw) if hist_raw else (sweep_dir / champion_run_id / "train_history.csv")
     if trial_hist.exists():
         canon_reports_dir = repo_root / "artifacts" / "reports"
         canon_reports_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(trial_hist, canon_reports_dir / "train_history.csv")
-        LOGGER.info("Promoted train history -> %s", canon_reports_dir / "train_history.csv")
+        canon_hist = canon_reports_dir / "train_history.csv"
+        if trial_hist.resolve() != canon_hist.resolve():
+            shutil.copy2(trial_hist, canon_hist)
+            LOGGER.info("Promoted train history -> %s", canon_hist)
+        else:
+            LOGGER.info("Train history already in place at %s", canon_hist)
 
     # 2. Update params.yaml SSoT
     if update_ssot:
@@ -255,7 +262,8 @@ def promote_champion(
         cfg: PipelineConfig = load_hydra_config(overrides=overrides)
         test_summary = evaluate_checkpoint(cfg)
         LOGGER.info(
-            "Champion test evaluation: test_accuracy=%.4f", test_summary.get("test_accuracy", 0.0)
+            "Champion test evaluation: test_accuracy=%.4f",
+            test_summary.get("test_acc", test_summary.get("test_accuracy", 0.0)),
         )
         bench_summary = benchmark_checkpoint(cfg)
         LOGGER.info("Champion latency benchmark complete.")
