@@ -69,10 +69,14 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+src = ["src", "scripts", "tests", "app"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "D"]
 ignore = ["E501", "D100", "D104"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mnist_pipeline"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

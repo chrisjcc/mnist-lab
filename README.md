@@ -95,6 +95,8 @@ make app
 | `make report` | Generate training curves, confusion matrix, sample predictions, and Hub cards |
 | `make evaluate-mve` | Verify all 5 Minimum Viable Experiment (MVE) acceptance criteria gates |
 | `make smoke-eval` | Execute sub-second synthetic tensor contract and gradient flow verification |
+| `make sweep` | Initialize and run W&B Bayesian hyperparameter sweep (`COUNT=5`) |
+| `make sweep-smoke` | Execute fast local 1-epoch sweep trial smoke test |
 | `make dvc-repro` | Reproduce the full 5-stage DVC pipeline (`dvc.yaml`) |
 | `make hf-upload` | Stage and upload model weights, metrics, plots, and cards to Hugging Face Hub |
 | `make hf-infer` | Load model from Hugging Face Hub (or local fallback) and run CLI digit inference |
