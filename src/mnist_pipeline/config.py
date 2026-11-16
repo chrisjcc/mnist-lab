@@ -237,6 +237,7 @@ class ModelConfig:
     num_heads: int = 4
     mlp_ratio: float = 2.0
     attention_dropout: float = 0.0
+    artifacts_dir: str | None = None
 
 
 @dataclass

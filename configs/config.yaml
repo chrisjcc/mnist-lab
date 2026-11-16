@@ -8,7 +8,7 @@ defaults:
   - _self_
 
 paths:
-  artifacts_dir: artifacts
+  artifacts_dir: ${oc.select:model.artifacts_dir,artifacts}
   checkpoints_dir: ${paths.artifacts_dir}/checkpoints
   evaluation_dir: ${paths.artifacts_dir}/evaluation
   benchmarks_dir: ${paths.artifacts_dir}/benchmarks
