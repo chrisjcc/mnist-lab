@@ -15,6 +15,7 @@ A reproducible, configuration-driven **MNIST handwritten digit classification pi
 - **Deterministic Data & Pipeline Versioning (`dvc.yaml`)**: Five-stage DAG (`preprocess -> train -> evaluate -> benchmark -> report`) with stratified train/validation splitting (`54,000 / 6,000 / 10,000`) and SHA-256 tensor checksums.
 - **Experiment Tracking (`Weights & Biases`)**: Pluggable `ExperimentTracker` supporting `online`, `offline`, and `disabled` modes with automated metric, figure, and checkpoint artifact logging.
 - **Hugging Face Hub Integration**: Automated `safetensors` serialization (`MNISTConvNet.save_pretrained` / `from_pretrained`), Jinja2-rendered Model & Dataset Cards (`docs/model_card.md`, `docs/dataset_card.md`), and CLI upload/inference scripts.
+- **Multi-Architecture Support (CNN vs. Vision Transformer)**: Supports both classical convolution ([`MNISTConvNet`](src/mnist_pipeline/model.py) via `model=cnn`, 421k params, 99.04% acc) and pure attention-based vision models ([`MNISTViT`](src/mnist_pipeline/model.py) via `model=transformer`, 540k params, 95.70% acc) with isolated artifact namespacing (`artifacts/cnn/` vs. `artifacts/transformer/`) and automated head-to-head comparison reporting (`make compare-models`).
 - **Interactive Hugging Face Docker Space (`app/`, `Dockerfile`)**: Streamlit web application supporting freehand digit drawing (`streamlit-drawable-canvas`), image uploads with automatic polarity inversion, and live 10-class probability bar charts.
 
 ---
@@ -93,6 +94,7 @@ make app
 | `make evaluate` | Evaluate `checkpoint_best.pt` on the 10,000 held-out test set |
 | `make benchmark` | Benchmark latency (`p50`, `p95`, `p99`) and throughput across batch sizes `[1, 32, 128]` |
 | `make report` | Generate training curves, confusion matrix, sample predictions, and Hub cards |
+| `make compare-models` | Systematically compare CNN vs. ViT metrics and compile Markdown comparison study |
 | `make evaluate-mve` | Verify all 5 Minimum Viable Experiment (MVE) acceptance criteria gates |
 | `make smoke-eval` | Execute sub-second synthetic tensor contract and gradient flow verification |
 | `make sweep` | Initialize and run W&B Bayesian hyperparameter sweep (`COUNT=5`) |
@@ -113,9 +115,12 @@ make app
 
 ## 📚 Documentation Index
 
-- [**Step-by-Step User Guide (`docs/user_guide.md`)**](docs/user_guide.md): Comprehensive 9-part guide covering setup, data preprocessing, Hydra training, W&B tracking, evaluation/benchmarking, reporting, HF Hub upload/inference, and Docker Space deployment.
-- [**PyTorch Neural Network & Training Loop Tutorial (`docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md`)**](docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md): Beginner-friendly guide to Feedforward (MLP) and Convolutional Neural Networks (CNNs) with a line-by-line annotated walkthrough of the PyTorch training loop in `src/mnist_pipeline/train.py`.
+- [**Step-by-Step User Guide (`docs/user_guide.md`)**](docs/user_guide.md): Comprehensive guide covering setup, data preprocessing, Hydra training (CNN & ViT), W&B tracking, evaluation/benchmarking, reporting, HF Hub upload/inference, and Docker Space deployment.
+- [**CNN vs. Vision Transformer Study (`docs/experiments/cnn_vs_transformer_study.md`)**](docs/experiments/cnn_vs_transformer_study.md): Empirical head-to-head comparison study evaluating accuracy, latency scaling, throughput, parameter efficiency, and Pareto frontier.
+- [**ViT Feasibility Study (`docs/research/transformer_mnist_feasibility_study.md`)**](docs/research/transformer_mnist_feasibility_study.md): Deep architectural analysis, theoretical formulation, patch projection math, and multi-architecture roadmap.
+- [**PyTorch Neural Network & Training Loop Tutorial (`docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md`)**](docs/tutorials/pytorch_nn_and_cnn_training_tutorial.md): Beginner-friendly guide to Feedforward (MLP) and Convolutional Neural Networks (CNNs) with an annotated training loop walkthrough.
 - [**MVE Baseline Study (`docs/experiments/mve_baseline_study.md`)**](docs/experiments/mve_baseline_study.md): Reproducible baseline instructions, acceptance gate adjudication, training curves, and test evaluation/benchmark tables.
 - [**Model Card (`docs/model_card.md`)**](docs/model_card.md): Architecture details, training hyperparameters, per-class evaluation metrics, and latency benchmarks.
 - [**Dataset Card (`docs/dataset_card.md`)**](docs/dataset_card.md): Dataset provenance, normalization formula, and stratified class distribution across splits.
 - [**Implementation Plan (`docs/mnist_pytorch_pipeline_implementation_plan.md`)**](docs/mnist_pytorch_pipeline_implementation_plan.md): Complete architectural specification and design blueprint.
+

@@ -1,6 +1,7 @@
 # Vision Transformer (ViT) model configuration preset
 name: mnist_vit
 architecture: transformer
+artifacts_dir: artifacts/models/mnist_vit
 in_channels: ${param:model.in_channels, 1}
 num_classes: ${param:model.num_classes, 10}
 patch_size: 4

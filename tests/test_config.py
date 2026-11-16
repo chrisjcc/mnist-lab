@@ -218,6 +218,11 @@ def test_transformer_hydra_config_loads() -> None:
     assert cfg.model.depth == 4
     assert cfg.model.num_heads == 4
     assert cfg.model.mlp_ratio == 2.0
+    assert cfg.paths.artifacts_dir == "artifacts/models/mnist_vit"
+    assert cfg.paths.checkpoints_dir == "artifacts/models/mnist_vit/checkpoints"
+    assert (
+        cfg.evaluate.checkpoint_path == "artifacts/models/mnist_vit/checkpoints/checkpoint_best.pt"
+    )
 
 
 def test_artifact_path_isolation_interpolation() -> None:

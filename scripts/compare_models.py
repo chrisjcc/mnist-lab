@@ -57,7 +57,14 @@ def main() -> None:
             p_val = Path(spec)
             label = p_val.name
             path_str = spec
-        models_dict[label.strip()] = Path(path_str.strip())
+        p_target = Path(path_str.strip())
+        if (
+            not p_target.exists()
+            and path_str.strip() == "artifacts/models/mnist_cnn"
+            and (Path("artifacts") / "evaluation" / "test_metrics.json").exists()
+        ):
+            p_target = Path("artifacts")
+        models_dict[label.strip()] = p_target
 
     LOGGER.info("Starting systematic model comparison for %d models:", len(models_dict))
     for label, path in models_dict.items():
