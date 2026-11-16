@@ -96,5 +96,5 @@ def run_smoke_verification() -> dict[str, float | int]:
 
 
 if __name__ == "__main__":
-    setup_logging(log_file="logs/smoke_eval.log")
+    setup_logging(log_file=Path("logs") / "smoke_eval.log")
     run_smoke_verification()

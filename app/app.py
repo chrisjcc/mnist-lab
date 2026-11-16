@@ -98,11 +98,9 @@ def run_app() -> None:
     )
 
     default_repo_id = os.environ.get("HF_MODEL_REPO_ID", "chrisjcc/mnist-cnn")
-    default_candidate = (
-        "artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt"
-        if Path("artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt").exists()
-        else "artifacts/checkpoints/checkpoint_best.pt"
-    )
+    cnn_ckpt = Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
+    legacy_ckpt = Path("artifacts") / "checkpoints" / "checkpoint_best.pt"
+    default_candidate = str(cnn_ckpt if cnn_ckpt.exists() else legacy_ckpt)
     default_ckpt = os.environ.get("MNIST_CHECKPOINT_PATH", default_candidate)
 
     with st.sidebar:
@@ -197,9 +195,9 @@ def run_app() -> None:
             _render_prediction_panel(pred_res)
 
     with tab_sample:
-        processed_test_path = Path("data/processed/test.pt")
+        processed_test_path = Path("data") / "processed" / "test.pt"
         if processed_test_path.exists():
-            test_images, test_labels = load_processed_split("data/processed", "test")
+            test_images, test_labels = load_processed_split(Path("data") / "processed", "test")
             max_idx = int(test_images.shape[0]) - 1
             sample_idx = st.slider(
                 "Select Held-Out MNIST Test Sample Index",

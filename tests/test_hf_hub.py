@@ -15,10 +15,20 @@ from mnist_pipeline.train import train_model
 def test_hf_hub_staging_and_dry_run_upload(tmp_path: Path) -> None:
     """Verify stage_model_release, stage_dataset_release, and upload_to_hf_hub dry-run."""
     repo_root = Path(__file__).resolve().parent.parent
+    raw_dir = tmp_path / "data" / "raw"
+    processed_dir = tmp_path / "data" / "processed"
+    artifacts_dir = tmp_path / "artifacts"
+    ckpt_dir = artifacts_dir / "checkpoints"
+    eval_dir = artifacts_dir / "evaluation"
+    bench_dir = artifacts_dir / "benchmarks"
+    report_dir = artifacts_dir / "reports"
+    plots_dir = report_dir / "plots"
+    docs_dir = tmp_path / "docs"
+
     cfg = load_hydra_config(
         overrides=[
-            f"data.raw_dir={tmp_path / 'data/raw'}",
-            f"data.processed_dir={tmp_path / 'data/processed'}",
+            f"data.raw_dir={raw_dir.as_posix()}",
+            f"data.processed_dir={processed_dir.as_posix()}",
             "data.download=false",
             "data.allow_synthetic_fallback=true",
             "data.num_synthetic_train=100",
@@ -31,14 +41,14 @@ def test_hf_hub_staging_and_dry_run_upload(tmp_path: Path) -> None:
             "evaluate.benchmark_batch_sizes=[1,16]",
             "wandb.mode=disabled",
             "hf.dry_run=true",
-            f"paths.artifacts_dir={tmp_path / 'artifacts'}",
-            f"paths.checkpoints_dir={tmp_path / 'artifacts/checkpoints'}",
-            f"paths.evaluation_dir={tmp_path / 'artifacts/evaluation'}",
-            f"paths.benchmarks_dir={tmp_path / 'artifacts/benchmarks'}",
-            f"paths.reports_dir={tmp_path / 'artifacts/reports'}",
-            f"paths.plots_dir={tmp_path / 'artifacts/reports/plots'}",
-            f"paths.templates_dir={repo_root / 'templates'}",
-            f"paths.docs_dir={tmp_path / 'docs'}",
+            f"paths.artifacts_dir={artifacts_dir.as_posix()}",
+            f"paths.checkpoints_dir={ckpt_dir.as_posix()}",
+            f"paths.evaluation_dir={eval_dir.as_posix()}",
+            f"paths.benchmarks_dir={bench_dir.as_posix()}",
+            f"paths.reports_dir={report_dir.as_posix()}",
+            f"paths.plots_dir={plots_dir.as_posix()}",
+            f"paths.templates_dir={(repo_root / 'templates').as_posix()}",
+            f"paths.docs_dir={docs_dir.as_posix()}",
         ]
     )
 

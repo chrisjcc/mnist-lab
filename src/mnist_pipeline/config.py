@@ -201,6 +201,16 @@ class DataConfig:
     num_synthetic_test: int = 100
     augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
 
+    @property
+    def raw_path(self) -> Path:
+        """Resolved Path for raw data directory."""
+        return Path(self.raw_dir)
+
+    @property
+    def processed_path(self) -> Path:
+        """Resolved Path for processed data directory."""
+        return Path(self.processed_dir)
+
 
 @dataclass
 class ModelConfig:
@@ -299,6 +309,11 @@ class EvaluateConfig:
     mve_max_p95_latency_ms: float = 25.0
     mve_min_throughput_sps: float = 1000.0
 
+    @property
+    def checkpoint_file_path(self) -> Path:
+        """Resolved Path for model checkpoint file."""
+        return Path(self.checkpoint_path)
+
 
 @dataclass
 class WandbConfig:
@@ -372,6 +387,51 @@ class PathsConfig:
     logs_dir: str = "logs"
     templates_dir: str = "templates"
     docs_dir: str = "docs"
+
+    @property
+    def artifacts_path(self) -> Path:
+        """Root directory for generated pipeline artifacts as a Path."""
+        return Path(self.artifacts_dir)
+
+    @property
+    def checkpoints_path(self) -> Path:
+        """Checkpoints directory as a Path."""
+        return Path(self.checkpoints_dir)
+
+    @property
+    def evaluation_path(self) -> Path:
+        """Evaluation directory as a Path."""
+        return Path(self.evaluation_dir)
+
+    @property
+    def benchmarks_path(self) -> Path:
+        """Benchmarks directory as a Path."""
+        return Path(self.benchmarks_dir)
+
+    @property
+    def reports_path(self) -> Path:
+        """Reports directory as a Path."""
+        return Path(self.reports_dir)
+
+    @property
+    def plots_path(self) -> Path:
+        """Diagnostic plots directory as a Path."""
+        return Path(self.plots_dir)
+
+    @property
+    def logs_path(self) -> Path:
+        """Logs directory as a Path."""
+        return Path(self.logs_dir)
+
+    @property
+    def templates_path(self) -> Path:
+        """Templates directory as a Path."""
+        return Path(self.templates_dir)
+
+    @property
+    def docs_path(self) -> Path:
+        """Documentation directory as a Path."""
+        return Path(self.docs_dir)
 
 
 @dataclass

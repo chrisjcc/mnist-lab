@@ -24,8 +24,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Composed Hydra `DictConfig`.
     """
     pipeline_cfg = to_pipeline_config(cfg)
-    log_dir = pipeline_cfg.paths.logs_dir
-    setup_logging(log_file=f"{log_dir}/benchmark.log")
+    setup_logging(log_file=pipeline_cfg.paths.logs_path / "benchmark.log")
     summary = benchmark_checkpoint(pipeline_cfg)
     LOGGER.info(
         "Benchmark finished on device=%s | trainable_params=%d | checkpoint_size_mb=%.3f",

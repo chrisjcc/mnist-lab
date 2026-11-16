@@ -13,20 +13,21 @@ from mnist_pipeline.train import train_model
 
 def test_end_to_end_eval_benchmark_and_reporting(tmp_path: Path) -> None:
     """Verify full evaluation, benchmarking, plot generation, and card rendering."""
-    raw_dir = tmp_path / "data/raw"
-    processed_dir = tmp_path / "data/processed"
-    ckpt_dir = tmp_path / "artifacts/checkpoints"
-    eval_dir = tmp_path / "artifacts/evaluation"
-    report_dir = tmp_path / "artifacts/reports"
-    plots_dir = tmp_path / "artifacts/reports/plots"
-    bench_dir = tmp_path / "artifacts/benchmarks"
+    raw_dir = tmp_path / "data" / "raw"
+    processed_dir = tmp_path / "data" / "processed"
+    artifacts_dir = tmp_path / "artifacts"
+    ckpt_dir = artifacts_dir / "checkpoints"
+    eval_dir = artifacts_dir / "evaluation"
+    report_dir = artifacts_dir / "reports"
+    plots_dir = report_dir / "plots"
+    bench_dir = artifacts_dir / "benchmarks"
     docs_dir = tmp_path / "docs"
     repo_root = Path(__file__).resolve().parent.parent
 
     cfg = load_hydra_config(
         overrides=[
-            f"data.raw_dir={raw_dir}",
-            f"data.processed_dir={processed_dir}",
+            f"data.raw_dir={raw_dir.as_posix()}",
+            f"data.processed_dir={processed_dir.as_posix()}",
             "data.download=false",
             "data.allow_synthetic_fallback=true",
             "data.num_synthetic_train=120",
@@ -38,14 +39,14 @@ def test_end_to_end_eval_benchmark_and_reporting(tmp_path: Path) -> None:
             "evaluate.benchmark_timed_runs=3",
             "evaluate.benchmark_batch_sizes=[1,16]",
             "wandb.mode=disabled",
-            f"paths.artifacts_dir={tmp_path / 'artifacts'}",
-            f"paths.checkpoints_dir={ckpt_dir}",
-            f"paths.evaluation_dir={eval_dir}",
-            f"paths.benchmarks_dir={bench_dir}",
-            f"paths.reports_dir={report_dir}",
-            f"paths.plots_dir={plots_dir}",
+            f"paths.artifacts_dir={artifacts_dir.as_posix()}",
+            f"paths.checkpoints_dir={ckpt_dir.as_posix()}",
+            f"paths.evaluation_dir={eval_dir.as_posix()}",
+            f"paths.benchmarks_dir={bench_dir.as_posix()}",
+            f"paths.reports_dir={report_dir.as_posix()}",
+            f"paths.plots_dir={plots_dir.as_posix()}",
             f"paths.templates_dir={repo_root / 'templates'}",
-            f"paths.docs_dir={docs_dir}",
+            f"paths.docs_dir={docs_dir.as_posix()}",
         ]
     )
 

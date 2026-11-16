@@ -24,8 +24,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Composed Hydra `DictConfig`.
     """
     pipeline_cfg = to_pipeline_config(cfg)
-    log_dir = pipeline_cfg.paths.logs_dir
-    setup_logging(log_file=f"{log_dir}/generate_report.log")
+    setup_logging(log_file=pipeline_cfg.paths.logs_path / "generate_report.log")
     repo_root = Path(__file__).resolve().parent.parent
     outputs = generate_all_reports(
         pipeline_cfg,

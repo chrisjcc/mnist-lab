@@ -19,7 +19,7 @@ from mnist_pipeline.utils import load_json
 def setup_and_teardown_test_sweep() -> Any:
     """Fixture to run smoke sweep trials and clean up after module execution."""
     sweep_id = "unit_test_sweep_abc"
-    sweep_dir = Path("artifacts/sweeps") / sweep_id
+    sweep_dir = Path("artifacts") / "sweeps" / sweep_id
     if sweep_dir.exists():
         shutil.rmtree(sweep_dir)
 
@@ -57,7 +57,7 @@ def setup_and_teardown_test_sweep() -> Any:
 def test_trial_isolation_and_ledger_recording(setup_and_teardown_test_sweep: str) -> None:
     """Verify that sweep trials isolate checkpoints and append to the local ledger."""
     sweep_id = setup_and_teardown_test_sweep
-    ledger_path = Path("artifacts/sweeps") / sweep_id / "trials.json"
+    ledger_path = Path("artifacts") / "sweeps" / sweep_id / "trials.json"
     assert ledger_path.exists()
 
     ledger_payload = load_json(ledger_path)
@@ -68,8 +68,8 @@ def test_trial_isolation_and_ledger_recording(setup_and_teardown_test_sweep: str
     assert "run_beta" in run_ids
 
     # Verify per-trial checkpoint isolation
-    assert (Path("artifacts/sweeps") / sweep_id / "run_alpha" / "checkpoint_best.pt").exists()
-    assert (Path("artifacts/sweeps") / sweep_id / "run_beta" / "checkpoint_best.pt").exists()
+    assert (Path("artifacts") / "sweeps" / sweep_id / "run_alpha" / "checkpoint_best.pt").exists()
+    assert (Path("artifacts") / "sweeps" / sweep_id / "run_beta" / "checkpoint_best.pt").exists()
 
 
 def test_generate_sweep_report_content(setup_and_teardown_test_sweep: str) -> None:
@@ -124,7 +124,7 @@ def test_find_latest_sweep_dir_and_promote_champion(
 ) -> None:
     """Verify that champion model promotion exports safetensors, updates reports, and handles dry-run."""
     sweep_id = setup_and_teardown_test_sweep
-    latest_sweep = find_latest_sweep_dir("artifacts/sweeps")
+    latest_sweep = find_latest_sweep_dir(Path("artifacts") / "sweeps")
     assert latest_sweep.exists()
 
     res = promote_champion(
@@ -137,6 +137,6 @@ def test_find_latest_sweep_dir_and_promote_champion(
     assert Path(res["promoted_checkpoint"]).exists()
 
     # Check that safetensors and config.json exist
-    ckpt_dir = Path("artifacts/checkpoints")
+    ckpt_dir = Path("artifacts") / "checkpoints"
     assert (ckpt_dir / "model.safetensors").exists()
     assert (ckpt_dir / "config.json").exists()

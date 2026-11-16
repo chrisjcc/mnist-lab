@@ -23,8 +23,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Hydra DictConfig composed from configs/config.yaml.
     """
     pipeline_cfg = to_pipeline_config(cfg)
-    log_dir = pipeline_cfg.paths.logs_dir
-    setup_logging(log_file=f"{log_dir}/preprocess.log")
+    setup_logging(log_file=pipeline_cfg.paths.logs_path / "preprocess.log")
     set_seed(pipeline_cfg.data.seed, deterministic=pipeline_cfg.train.deterministic)
     metadata = preprocess_mnist_data(pipeline_cfg.data)
     splits = metadata["splits"]

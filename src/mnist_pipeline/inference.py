@@ -225,9 +225,13 @@ def preprocess_pil_image(
 
 def load_inference_model(
     repo_id_or_path: str | Path = "chrisjcc/mnist-cnn",
-    checkpoint_fallback: str | Path = "artifacts/checkpoints/checkpoint_best.pt",
+    checkpoint_fallback: str | Path = Path("artifacts")
+    / "models"
+    / "mnist_cnn"
+    / "checkpoints"
+    / "checkpoint_best.pt",
     revision: str = "main",
-    cache_dir: str | Path | None = "artifacts/hf_cache",
+    cache_dir: str | Path | None = Path("artifacts") / "hf_cache",
     device: str | torch.device = "cpu",
 ) -> tuple[torch.nn.Module, str]:
     """Load an `MNISTConvNet` for inference with resilient local and Hub fallback.
@@ -272,6 +276,13 @@ def load_inference_model(
         return model, f"local_checkpoint:{local_candidate}"
 
     ckpt_path = Path(checkpoint_fallback)
+    if not ckpt_path.exists() and ckpt_path == (
+        Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
+    ):
+        legacy_path = Path("artifacts") / "checkpoints" / "checkpoint_best.pt"
+        if legacy_path.exists():
+            ckpt_path = legacy_path
+
     if ckpt_path.parent.exists() and (ckpt_path.parent / "model.safetensors").exists():
         try:
             model = load_model_from_pretrained(ckpt_path.parent, map_location=device)

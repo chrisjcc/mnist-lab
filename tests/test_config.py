@@ -35,12 +35,23 @@ def test_default_hydra_config_loads() -> None:
     assert cfg.model.num_classes == 10
     assert cfg.model.conv_channels == [32, 64]
     assert cfg.train.optimizer == "adam"
-    assert cfg.paths.artifacts_dir == "artifacts/models/mnist_cnn"
-    assert cfg.paths.checkpoints_dir == "artifacts/models/mnist_cnn/checkpoints"
+    assert Path(cfg.paths.artifacts_dir) == Path("artifacts") / "models" / "mnist_cnn"
     assert (
-        cfg.evaluate.checkpoint_path == "artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt"
+        Path(cfg.paths.checkpoints_dir)
+        == Path("artifacts") / "models" / "mnist_cnn" / "checkpoints"
     )
-    assert cfg.paths.logs_dir == "logs"
+    assert (
+        Path(cfg.evaluate.checkpoint_path)
+        == Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
+    )
+    assert Path(cfg.paths.logs_dir) == Path("logs")
+    assert cfg.paths.artifacts_path == Path("artifacts") / "models" / "mnist_cnn"
+    assert cfg.paths.checkpoints_path == Path("artifacts") / "models" / "mnist_cnn" / "checkpoints"
+    assert cfg.paths.logs_path == Path("logs")
+    assert (
+        cfg.evaluate.checkpoint_file_path
+        == Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
+    )
 
 
 def test_hydra_config_overrides() -> None:
@@ -243,27 +254,43 @@ def test_transformer_hydra_config_loads() -> None:
     assert cfg.model.depth == 4
     assert cfg.model.num_heads == 4
     assert cfg.model.mlp_ratio == 2.0
-    assert cfg.paths.artifacts_dir == "artifacts/models/mnist_vit"
-    assert cfg.paths.checkpoints_dir == "artifacts/models/mnist_vit/checkpoints"
+    assert Path(cfg.paths.artifacts_dir) == Path("artifacts") / "models" / "mnist_vit"
     assert (
-        cfg.evaluate.checkpoint_path == "artifacts/models/mnist_vit/checkpoints/checkpoint_best.pt"
+        Path(cfg.paths.checkpoints_dir)
+        == Path("artifacts") / "models" / "mnist_vit" / "checkpoints"
+    )
+    assert (
+        Path(cfg.evaluate.checkpoint_path)
+        == Path("artifacts") / "models" / "mnist_vit" / "checkpoints" / "checkpoint_best.pt"
+    )
+    assert cfg.paths.artifacts_path == Path("artifacts") / "models" / "mnist_vit"
+    assert cfg.paths.checkpoints_path == Path("artifacts") / "models" / "mnist_vit" / "checkpoints"
+    assert (
+        cfg.evaluate.checkpoint_file_path
+        == Path("artifacts") / "models" / "mnist_vit" / "checkpoints" / "checkpoint_best.pt"
     )
 
 
 def test_artifact_path_isolation_interpolation() -> None:
-    custom_art = "artifacts/models/mnist_vit"
+    custom_art = Path("artifacts") / "models" / "mnist_vit"
     cfg = load_hydra_config(
         config_dir="configs",
         config_name="config",
-        overrides=[f"paths.artifacts_dir={custom_art}"],
+        overrides=[f"paths.artifacts_dir={custom_art.as_posix()}"],
     )
-    assert cfg.paths.artifacts_dir == custom_art
-    assert cfg.paths.checkpoints_dir == f"{custom_art}/checkpoints"
-    assert cfg.paths.evaluation_dir == f"{custom_art}/evaluation"
-    assert cfg.paths.benchmarks_dir == f"{custom_art}/benchmarks"
-    assert cfg.paths.reports_dir == f"{custom_art}/reports"
-    assert cfg.paths.plots_dir == f"{custom_art}/reports/plots"
-    assert cfg.evaluate.checkpoint_path == f"{custom_art}/checkpoints/checkpoint_best.pt"
+    assert Path(cfg.paths.artifacts_dir) == custom_art
+    assert Path(cfg.paths.checkpoints_dir) == custom_art / "checkpoints"
+    assert Path(cfg.paths.evaluation_dir) == custom_art / "evaluation"
+    assert Path(cfg.paths.benchmarks_dir) == custom_art / "benchmarks"
+    assert Path(cfg.paths.reports_dir) == custom_art / "reports"
+    assert Path(cfg.paths.plots_dir) == custom_art / "reports" / "plots"
+    assert Path(cfg.evaluate.checkpoint_path) == custom_art / "checkpoints" / "checkpoint_best.pt"
+    assert cfg.paths.artifacts_path == custom_art
+    assert cfg.paths.checkpoints_path == custom_art / "checkpoints"
+    assert cfg.paths.evaluation_path == custom_art / "evaluation"
+    assert cfg.paths.benchmarks_path == custom_art / "benchmarks"
+    assert cfg.paths.reports_path == custom_art / "reports"
+    assert cfg.paths.plots_path == custom_art / "reports" / "plots"
 
 
 @pytest.mark.parametrize(

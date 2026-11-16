@@ -65,7 +65,9 @@ def verify_mve_gates(
     results: list[GateResult] = []
 
     # Gate 1: Data Integrity & Split Balance
-    split_meta_path = root_dir / "data/processed/split_metadata.json"
+    split_meta_path = root_dir / Path(cfg.data.processed_dir) / "split_metadata.json"
+    if not split_meta_path.exists():
+        split_meta_path = root_dir / "data" / "processed" / "split_metadata.json"
     if not split_meta_path.exists():
         results.append(GateResult("Gate 1", "Data Integrity", False, f"Missing {split_meta_path}"))
     else:
@@ -95,9 +97,9 @@ def verify_mve_gates(
         )
 
     # Gate 2: Training Convergence
-    history_path = root_dir / cfg.paths.reports_dir / "train_history.csv"
+    history_path = root_dir / Path(cfg.paths.reports_dir) / "train_history.csv"
     if not history_path.exists():
-        history_path = root_dir / "artifacts/reports/train_history.csv"
+        history_path = root_dir / "artifacts" / "reports" / "train_history.csv"
     if not history_path.exists():
         results.append(
             GateResult("Gate 2", "Training Convergence", False, f"Missing {history_path}")
@@ -128,9 +130,9 @@ def verify_mve_gates(
         )
 
     # Gate 3: Held-Out Test Generalization
-    test_metrics_path = root_dir / cfg.paths.evaluation_dir / "test_metrics.json"
+    test_metrics_path = root_dir / Path(cfg.paths.evaluation_dir) / "test_metrics.json"
     if not test_metrics_path.exists():
-        test_metrics_path = root_dir / "artifacts/evaluation/test_metrics.json"
+        test_metrics_path = root_dir / "artifacts" / "evaluation" / "test_metrics.json"
     if not test_metrics_path.exists():
         results.append(
             GateResult(
@@ -163,9 +165,9 @@ def verify_mve_gates(
         )
 
     # Gate 4: Inference Latency & Footprint
-    bench_path = root_dir / cfg.paths.benchmarks_dir / "benchmark_metrics.json"
+    bench_path = root_dir / Path(cfg.paths.benchmarks_dir) / "benchmark_metrics.json"
     if not bench_path.exists():
-        bench_path = root_dir / "artifacts/benchmarks/benchmark_metrics.json"
+        bench_path = root_dir / "artifacts" / "benchmarks" / "benchmark_metrics.json"
     if not bench_path.exists():
         results.append(
             GateResult("Gate 4", "Inference Latency & Footprint", False, f"Missing {bench_path}")
@@ -191,35 +193,35 @@ def verify_mve_gates(
     # Gate 5: Artifact & Visualization Completeness
     candidate_required = [
         (
-            root_dir / cfg.paths.checkpoints_dir / "checkpoint_best.pt",
-            root_dir / "artifacts/checkpoints/checkpoint_best.pt",
+            root_dir / Path(cfg.paths.checkpoints_dir) / "checkpoint_best.pt",
+            root_dir / "artifacts" / "checkpoints" / "checkpoint_best.pt",
         ),
         (
-            root_dir / cfg.paths.checkpoints_dir / "model.safetensors",
-            root_dir / "artifacts/checkpoints/model.safetensors",
+            root_dir / Path(cfg.paths.checkpoints_dir) / "model.safetensors",
+            root_dir / "artifacts" / "checkpoints" / "model.safetensors",
         ),
         (
-            root_dir / cfg.paths.plots_dir / "loss_curve.png",
-            root_dir / "artifacts/reports/plots/loss_curve.png",
+            root_dir / Path(cfg.paths.plots_dir) / "loss_curve.png",
+            root_dir / "artifacts" / "reports" / "plots" / "loss_curve.png",
         ),
         (
-            root_dir / cfg.paths.plots_dir / "accuracy_curve.png",
-            root_dir / "artifacts/reports/plots/accuracy_curve.png",
+            root_dir / Path(cfg.paths.plots_dir) / "accuracy_curve.png",
+            root_dir / "artifacts" / "reports" / "plots" / "accuracy_curve.png",
         ),
         (
-            root_dir / cfg.paths.plots_dir / "confusion_matrix.png",
-            root_dir / "artifacts/reports/plots/confusion_matrix.png",
+            root_dir / Path(cfg.paths.plots_dir) / "confusion_matrix.png",
+            root_dir / "artifacts" / "reports" / "plots" / "confusion_matrix.png",
         ),
         (
-            root_dir / cfg.paths.plots_dir / "sample_predictions.png",
-            root_dir / "artifacts/reports/plots/sample_predictions.png",
+            root_dir / Path(cfg.paths.plots_dir) / "sample_predictions.png",
+            root_dir / "artifacts" / "reports" / "plots" / "sample_predictions.png",
         ),
         (
-            root_dir / cfg.paths.reports_dir / "evaluation_report.md",
-            root_dir / "artifacts/reports/evaluation_report.md",
+            root_dir / Path(cfg.paths.reports_dir) / "evaluation_report.md",
+            root_dir / "artifacts" / "reports" / "evaluation_report.md",
         ),
-        (root_dir / "docs/model_card.md", root_dir / "docs/model_card.md"),
-        (root_dir / "docs/dataset_card.md", root_dir / "docs/dataset_card.md"),
+        (root_dir / "docs" / "model_card.md", root_dir / "docs" / "model_card.md"),
+        (root_dir / "docs" / "dataset_card.md", root_dir / "docs" / "dataset_card.md"),
     ]
     missing_or_empty: list[str] = []
     for primary, fallback in candidate_required:
@@ -249,12 +251,21 @@ def run_smoke_mve() -> list[GateResult]:
     repo_root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory(prefix="mnist_mve_smoke_") as tmp_str:
         tmp_root = Path(tmp_str)
-        processed_dir = tmp_root / "data/processed"
+        raw_dir = tmp_root / "data" / "raw"
+        processed_dir = tmp_root / "data" / "processed"
+        art_dir = tmp_root / "artifacts"
+        ck_dir = art_dir / "checkpoints"
+        ev_dir = art_dir / "evaluation"
+        bm_dir = art_dir / "benchmarks"
+        rp_dir = art_dir / "reports"
+        pl_dir = rp_dir / "plots"
+        dc_dir = tmp_root / "docs"
+        tp_dir = repo_root / "templates"
 
         cfg = load_hydra_config(
             overrides=[
-                f"data.raw_dir={tmp_root / 'data/raw'}",
-                f"data.processed_dir={processed_dir}",
+                f"data.raw_dir={raw_dir.as_posix()}",
+                f"data.processed_dir={processed_dir.as_posix()}",
                 "data.download=false",
                 "data.allow_synthetic_fallback=true",
                 "data.num_synthetic_train=200",
@@ -266,14 +277,14 @@ def run_smoke_mve() -> list[GateResult]:
                 "evaluate.benchmark_warmup_runs=2",
                 "evaluate.benchmark_timed_runs=5",
                 "wandb.mode=disabled",
-                f"paths.artifacts_dir={tmp_root / 'artifacts'}",
-                f"paths.checkpoints_dir={tmp_root / 'artifacts/checkpoints'}",
-                f"paths.evaluation_dir={tmp_root / 'artifacts/evaluation'}",
-                f"paths.benchmarks_dir={tmp_root / 'artifacts/benchmarks'}",
-                f"paths.reports_dir={tmp_root / 'artifacts/reports'}",
-                f"paths.plots_dir={tmp_root / 'artifacts/reports/plots'}",
-                f"paths.templates_dir={repo_root / 'templates'}",
-                f"paths.docs_dir={tmp_root / 'docs'}",
+                f"paths.artifacts_dir={art_dir.as_posix()}",
+                f"paths.checkpoints_dir={ck_dir.as_posix()}",
+                f"paths.evaluation_dir={ev_dir.as_posix()}",
+                f"paths.benchmarks_dir={bm_dir.as_posix()}",
+                f"paths.reports_dir={rp_dir.as_posix()}",
+                f"paths.plots_dir={pl_dir.as_posix()}",
+                f"paths.templates_dir={tp_dir.as_posix()}",
+                f"paths.docs_dir={dc_dir.as_posix()}",
             ]
         )
 
@@ -301,7 +312,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    setup_logging(log_file="logs/mve_evaluation.log")
+    setup_logging(log_file=Path("logs") / "mve_evaluation.log")
 
     repo_root = Path(__file__).resolve().parent.parent
     gate_results: list[GateResult] = (
