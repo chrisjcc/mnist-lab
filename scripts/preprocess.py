@@ -10,12 +10,8 @@ from omegaconf import DictConfig
 
 from mnist_pipeline.config import to_pipeline_config
 from mnist_pipeline.data import preprocess_mnist_data
-from mnist_pipeline.utils import set_seed
+from mnist_pipeline.utils import set_seed, setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 logger = logging.getLogger(__name__)
 
 
@@ -27,6 +23,8 @@ def main(cfg: DictConfig) -> None:
         cfg: Hydra DictConfig composed from configs/config.yaml.
     """
     pipeline_cfg = to_pipeline_config(cfg)
+    log_dir = pipeline_cfg.paths.logs_dir
+    setup_logging(log_file=f"{log_dir}/preprocess.log")
     set_seed(pipeline_cfg.data.seed, deterministic=pipeline_cfg.train.deterministic)
     metadata = preprocess_mnist_data(pipeline_cfg.data)
     splits = metadata["splits"]

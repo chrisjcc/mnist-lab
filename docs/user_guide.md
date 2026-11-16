@@ -153,9 +153,9 @@ The pipeline natively supports two distinct neural network model families config
 
 #### Artifact Path Isolation Policy
 
-To support running and comparing both architectures without mixing or overwriting outputs, all output paths dynamically interpolate the selected architecture:
-- `artifacts/cnn/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
-- `artifacts/transformer/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
+To support running and comparing both architectures symmetrically without mixing or overwriting outputs, all output paths automatically isolate under `artifacts/models/`:
+- `artifacts/models/mnist_cnn/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
+- `artifacts/models/mnist_vit/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
 
 ---
 

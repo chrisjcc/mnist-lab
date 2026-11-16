@@ -23,12 +23,8 @@ from mnist_pipeline.model import (
     load_checkpoint,
     save_checkpoint,
 )
-from mnist_pipeline.utils import set_seed
+from mnist_pipeline.utils import set_seed, setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 logger = logging.getLogger(__name__)
 
 
@@ -100,4 +96,5 @@ def run_smoke_verification() -> dict[str, float | int]:
 
 
 if __name__ == "__main__":
+    setup_logging(log_file="logs/smoke_eval.log")
     run_smoke_verification()

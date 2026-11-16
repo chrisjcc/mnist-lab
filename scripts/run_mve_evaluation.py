@@ -25,7 +25,7 @@ from mnist_pipeline.data import preprocess_mnist_data
 from mnist_pipeline.evaluate import benchmark_checkpoint, evaluate_checkpoint
 from mnist_pipeline.reporting import generate_all_reports
 from mnist_pipeline.train import train_model
-from mnist_pipeline.utils import load_json
+from mnist_pipeline.utils import load_json, setup_logging
 
 LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +95,9 @@ def verify_mve_gates(
         )
 
     # Gate 2: Training Convergence
-    history_path = root_dir / "artifacts/reports/train_history.csv"
+    history_path = root_dir / cfg.paths.reports_dir / "train_history.csv"
+    if not history_path.exists():
+        history_path = root_dir / "artifacts/reports/train_history.csv"
     if not history_path.exists():
         results.append(
             GateResult("Gate 2", "Training Convergence", False, f"Missing {history_path}")
@@ -126,7 +128,9 @@ def verify_mve_gates(
         )
 
     # Gate 3: Held-Out Test Generalization
-    test_metrics_path = root_dir / "artifacts/evaluation/test_metrics.json"
+    test_metrics_path = root_dir / cfg.paths.evaluation_dir / "test_metrics.json"
+    if not test_metrics_path.exists():
+        test_metrics_path = root_dir / "artifacts/evaluation/test_metrics.json"
     if not test_metrics_path.exists():
         results.append(
             GateResult(
@@ -159,7 +163,9 @@ def verify_mve_gates(
         )
 
     # Gate 4: Inference Latency & Footprint
-    bench_path = root_dir / "artifacts/benchmarks/benchmark_metrics.json"
+    bench_path = root_dir / cfg.paths.benchmarks_dir / "benchmark_metrics.json"
+    if not bench_path.exists():
+        bench_path = root_dir / "artifacts/benchmarks/benchmark_metrics.json"
     if not bench_path.exists():
         results.append(
             GateResult("Gate 4", "Inference Latency & Footprint", False, f"Missing {bench_path}")
@@ -183,25 +189,47 @@ def verify_mve_gates(
         )
 
     # Gate 5: Artifact & Visualization Completeness
-    required_files = [
-        root_dir / "artifacts/checkpoints/checkpoint_best.pt",
-        root_dir / "artifacts/checkpoints/model.safetensors",
-        root_dir / "artifacts/reports/plots/loss_curve.png",
-        root_dir / "artifacts/reports/plots/accuracy_curve.png",
-        root_dir / "artifacts/reports/plots/confusion_matrix.png",
-        root_dir / "artifacts/reports/plots/sample_predictions.png",
-        root_dir / "artifacts/reports/evaluation_report.md",
-        root_dir / "docs/model_card.md",
-        root_dir / "docs/dataset_card.md",
+    candidate_required = [
+        (
+            root_dir / cfg.paths.checkpoints_dir / "checkpoint_best.pt",
+            root_dir / "artifacts/checkpoints/checkpoint_best.pt",
+        ),
+        (
+            root_dir / cfg.paths.checkpoints_dir / "model.safetensors",
+            root_dir / "artifacts/checkpoints/model.safetensors",
+        ),
+        (
+            root_dir / cfg.paths.plots_dir / "loss_curve.png",
+            root_dir / "artifacts/reports/plots/loss_curve.png",
+        ),
+        (
+            root_dir / cfg.paths.plots_dir / "accuracy_curve.png",
+            root_dir / "artifacts/reports/plots/accuracy_curve.png",
+        ),
+        (
+            root_dir / cfg.paths.plots_dir / "confusion_matrix.png",
+            root_dir / "artifacts/reports/plots/confusion_matrix.png",
+        ),
+        (
+            root_dir / cfg.paths.plots_dir / "sample_predictions.png",
+            root_dir / "artifacts/reports/plots/sample_predictions.png",
+        ),
+        (
+            root_dir / cfg.paths.reports_dir / "evaluation_report.md",
+            root_dir / "artifacts/reports/evaluation_report.md",
+        ),
+        (root_dir / "docs/model_card.md", root_dir / "docs/model_card.md"),
+        (root_dir / "docs/dataset_card.md", root_dir / "docs/dataset_card.md"),
     ]
-    missing_or_empty = [
-        str(p.relative_to(root_dir))
-        for p in required_files
-        if not p.exists() or p.stat().st_size == 0
-    ]
+    missing_or_empty: list[str] = []
+    for primary, fallback in candidate_required:
+        target = primary if (primary.exists() and primary.stat().st_size > 0) else fallback
+        if not target.exists() or target.stat().st_size == 0:
+            missing_or_empty.append(str(primary.relative_to(root_dir)))
+
     passed_g5 = len(missing_or_empty) == 0
     details_g5 = (
-        f"All {len(required_files)} required artifacts/plots non-empty"
+        f"All {len(candidate_required)} required artifacts/plots non-empty"
         if passed_g5
         else f"Missing or empty: {missing_or_empty}"
     )
@@ -273,10 +301,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    setup_logging(log_file="logs/mve_evaluation.log")
 
     repo_root = Path(__file__).resolve().parent.parent
     gate_results: list[GateResult] = (

@@ -46,12 +46,12 @@ stages:
       - train.seed
       - train.deterministic
     outs:
-      - artifacts/checkpoints/checkpoint_best.pt
-      - artifacts/checkpoints/checkpoint_last.pt
-      - artifacts/checkpoints/model.safetensors
-      - artifacts/checkpoints/config.json
-      - artifacts/reports/train_history.csv
-      - artifacts/reports/environment.json
+      - artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt
+      - artifacts/models/mnist_cnn/checkpoints/checkpoint_last.pt
+      - artifacts/models/mnist_cnn/checkpoints/model.safetensors
+      - artifacts/models/mnist_cnn/checkpoints/config.json
+      - artifacts/models/mnist_cnn/reports/train_history.csv
+      - artifacts/models/mnist_cnn/reports/environment.json
 
   evaluate:
     cmd: python scripts/evaluate.py
@@ -60,7 +60,7 @@ stages:
       - src/mnist_pipeline/evaluate.py
       - src/mnist_pipeline/metrics.py
       - src/mnist_pipeline/model.py
-      - artifacts/checkpoints/checkpoint_best.pt
+      - artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt
       - data/processed/test.pt
       - configs/config.yaml
       - configs/model/cnn.yaml
@@ -68,11 +68,11 @@ stages:
     params:
       - evaluate.batch_size
     metrics:
-      - artifacts/evaluation/test_metrics.json:
+      - artifacts/models/mnist_cnn/evaluation/test_metrics.json:
           cache: false
     outs:
-      - artifacts/evaluation/classification_report.txt
-      - artifacts/evaluation/confusion_matrix.csv
+      - artifacts/models/mnist_cnn/evaluation/classification_report.txt
+      - artifacts/models/mnist_cnn/evaluation/confusion_matrix.csv
 
   benchmark:
     cmd: python scripts/benchmark.py
@@ -80,7 +80,7 @@ stages:
       - scripts/benchmark.py
       - src/mnist_pipeline/evaluate.py
       - src/mnist_pipeline/model.py
-      - artifacts/checkpoints/checkpoint_best.pt
+      - artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt
       - configs/config.yaml
       - configs/model/cnn.yaml
       - configs/evaluate/default.yaml
@@ -89,7 +89,7 @@ stages:
       - evaluate.benchmark_timed_runs
       - evaluate.benchmark_batch_sizes
     metrics:
-      - artifacts/benchmarks/benchmark_metrics.json:
+      - artifacts/models/mnist_cnn/benchmarks/benchmark_metrics.json:
           cache: false
 
   report:
@@ -99,19 +99,19 @@ stages:
       - src/mnist_pipeline/reporting.py
       - configs/config.yaml
       - configs/hf/default.yaml
-      - artifacts/reports/train_history.csv
-      - artifacts/evaluation/test_metrics.json
-      - artifacts/evaluation/confusion_matrix.csv
-      - artifacts/benchmarks/benchmark_metrics.json
+      - artifacts/models/mnist_cnn/reports/train_history.csv
+      - artifacts/models/mnist_cnn/evaluation/test_metrics.json
+      - artifacts/models/mnist_cnn/evaluation/confusion_matrix.csv
+      - artifacts/models/mnist_cnn/benchmarks/benchmark_metrics.json
       - templates/model_card_template.md
       - templates/dataset_card_template.md
     plots:
-      - artifacts/reports/plots/loss_curve.png
-      - artifacts/reports/plots/accuracy_curve.png
-      - artifacts/reports/plots/confusion_matrix.png
-      - artifacts/reports/plots/sample_predictions.png
+      - artifacts/models/mnist_cnn/reports/plots/loss_curve.png
+      - artifacts/models/mnist_cnn/reports/plots/accuracy_curve.png
+      - artifacts/models/mnist_cnn/reports/plots/confusion_matrix.png
+      - artifacts/models/mnist_cnn/reports/plots/sample_predictions.png
     outs:
-      - artifacts/reports/evaluation_report.md
+      - artifacts/models/mnist_cnn/reports/evaluation_report.md
       - docs/model_card.md:
           cache: false
       - docs/dataset_card.md:

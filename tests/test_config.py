@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,7 @@ from mnist_pipeline.utils import (
     resolve_device,
     save_json,
     set_seed,
+    setup_logging,
 )
 
 
@@ -33,6 +35,12 @@ def test_default_hydra_config_loads() -> None:
     assert cfg.model.num_classes == 10
     assert cfg.model.conv_channels == [32, 64]
     assert cfg.train.optimizer == "adam"
+    assert cfg.paths.artifacts_dir == "artifacts/models/mnist_cnn"
+    assert cfg.paths.checkpoints_dir == "artifacts/models/mnist_cnn/checkpoints"
+    assert (
+        cfg.evaluate.checkpoint_path == "artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt"
+    )
+    assert cfg.paths.logs_dir == "logs"
 
 
 def test_hydra_config_overrides() -> None:
@@ -114,6 +122,23 @@ def test_seed_and_device_utilities(tmp_path: Path) -> None:
     json_path = save_json(meta, tmp_path / "env.json")
     loaded = load_json(json_path)
     assert loaded["seed"] == 123
+
+
+def test_setup_logging(tmp_path: Path) -> None:
+    log_file = tmp_path / "logs" / "test.log"
+    logger = setup_logging(log_file=log_file)
+    logger.info("Test log line written to dedicated logs directory")
+    assert log_file.exists()
+    content = log_file.read_text(encoding="utf-8")
+    assert "Test log line written to dedicated logs directory" in content
+
+    # Clean up file handler
+    for h in list(logger.handlers):
+        if isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", None) == str(
+            log_file.resolve()
+        ):
+            h.close()
+            logger.removeHandler(h)
 
 
 def test_params_yaml_ssot_resolver_and_overrides(

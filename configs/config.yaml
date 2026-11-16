@@ -14,6 +14,7 @@ paths:
   benchmarks_dir: ${paths.artifacts_dir}/benchmarks
   reports_dir: ${paths.artifacts_dir}/reports
   plots_dir: ${paths.reports_dir}/plots
+  logs_dir: logs
   templates_dir: templates
   docs_dir: docs
 

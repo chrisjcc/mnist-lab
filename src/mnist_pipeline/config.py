@@ -369,6 +369,7 @@ class PathsConfig:
     benchmarks_dir: str = "artifacts/benchmarks"
     reports_dir: str = "artifacts/reports"
     plots_dir: str = "artifacts/reports/plots"
+    logs_dir: str = "logs"
     templates_dir: str = "templates"
     docs_dir: str = "docs"
 

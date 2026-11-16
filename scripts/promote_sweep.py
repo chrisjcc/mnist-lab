@@ -17,12 +17,8 @@ from mnist_pipeline.evaluate import benchmark_checkpoint, evaluate_checkpoint
 from mnist_pipeline.hf_hub import upload_to_hf_hub
 from mnist_pipeline.model import load_checkpoint
 from mnist_pipeline.reporting import generate_all_reports, generate_sweep_report
-from mnist_pipeline.utils import load_json, resolve_device
+from mnist_pipeline.utils import load_json, resolve_device, setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 LOGGER = logging.getLogger("promote_sweep")
 
 
@@ -361,6 +357,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """CLI entrypoint for promote_sweep script."""
+    setup_logging(log_file="logs/promote_sweep.log")
     args = parse_args()
 
     if args.report_only:

@@ -10,6 +10,7 @@ from omegaconf import DictConfig
 
 from mnist_pipeline.config import to_pipeline_config
 from mnist_pipeline.evaluate import evaluate_checkpoint
+from mnist_pipeline.utils import setup_logging
 
 LOGGER = logging.getLogger(__name__)
 _CONFIG_DIR = str((Path(__file__).resolve().parent.parent / "configs").resolve())
@@ -22,11 +23,9 @@ def main(cfg: DictConfig) -> None:
     Args:
         cfg: Composed Hydra `DictConfig`.
     """
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
     pipeline_cfg = to_pipeline_config(cfg)
+    log_dir = pipeline_cfg.paths.logs_dir
+    setup_logging(log_file=f"{log_dir}/evaluate.log")
     metrics = evaluate_checkpoint(pipeline_cfg)
     LOGGER.info(
         "Evaluation finished: test_acc=%.4f | macro_f1=%.4f | test_loss=%.4f",

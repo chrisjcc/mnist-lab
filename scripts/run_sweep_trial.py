@@ -18,12 +18,8 @@ import wandb
 from mnist_pipeline.config import PipelineConfig, load_hydra_config
 from mnist_pipeline.reporting import generate_sweep_report
 from mnist_pipeline.train import TrainingSummary, train_model
-from mnist_pipeline.utils import load_json, save_json
+from mnist_pipeline.utils import load_json, save_json, setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 logger = logging.getLogger("run_sweep_trial")
 
 PARAM_MAPPING: dict[str, str] = {
@@ -257,6 +253,7 @@ def parse_args(argv: list[str]) -> tuple[dict[str, Any], bool, list[str]]:
 
 def main() -> None:
     """CLI entrypoint for running a sweep trial."""
+    setup_logging(log_file="logs/sweep_trial.log")
     cli_dict, smoke, extra_overrides = parse_args(sys.argv[1:])
     run_trial(cli_args=cli_dict, smoke=smoke, extra_overrides=extra_overrides)
 

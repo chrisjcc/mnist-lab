@@ -8,8 +8,8 @@
 
 This report presents a head-to-head empirical comparison between **CNN (MNISTConvNet)** and **Transformer (MNISTViT)** trained and evaluated under identical, isolated experimental protocols on the MNIST benchmark dataset.
 
-- **Accuracy Delta**: **Transformer (MNISTViT)** achieves `95.65%` vs. **CNN (MNISTConvNet)** `98.93%` (difference: `-3.28%`).
-- **Inference Efficiency**: **CNN (MNISTConvNet)** is `1.1x` faster at single-sample P95 latency (`0.94 ms` vs. `0.99 ms`).
+- **Accuracy Delta**: **Transformer (MNISTViT)** achieves `94.85%` vs. **CNN (MNISTConvNet)** `98.74%` (difference: `-3.89%`).
+- **Inference Efficiency**: **CNN (MNISTConvNet)** is `7.0x` faster at single-sample P95 latency (`0.19 ms` vs. `1.32 ms`).
 - **Parameter Footprint**: **CNN (MNISTConvNet)** has `421,834` trainable parameters vs. `540,170` for **Transformer (MNISTViT)**.
 
 ---
@@ -18,15 +18,15 @@ This report presents a head-to-head empirical comparison between **CNN (MNISTCon
 
 | Performance Metric | **CNN (MNISTConvNet)** | **Transformer (MNISTViT)** | Delta / Comparison |
 | :--- | :---: | :---: | :---: |
-| **Test Accuracy (%)** | `98.93%` | `95.65%` | `-3.28%` |
-| **Test Loss (Cross-Entropy)** | `0.0315` | `0.1371` | `+0.1056` |
-| **Macro F1-Score** | `0.9892` | `0.9560` | `-0.0333` |
+| **Test Accuracy (%)** | `98.74%` | `94.85%` | `-3.89%` |
+| **Test Loss (Cross-Entropy)** | `0.0348` | `0.1581` | `+0.1233` |
+| **Macro F1-Score** | `0.9873` | `0.9480` | `-0.0393` |
 | **Trainable Parameters** | `421,834` | `540,170` | `+118,336` |
 | **Checkpoint Size (.pt)** | `4.85 MB` | `6.25 MB` | `+1.40 MB` |
 | **SafeTensors Size** | `1.61 MB` | `2.07 MB` | `+0.45 MB` |
-| **Latency P50 (ms, B=1)** | `0.371 ms` | `0.852 ms` | `+0.481 ms` |
-| **Latency P95 (ms, B=1)** | `0.944 ms` | `0.992 ms` | `+0.048 ms` |
-| **Throughput (samples/s, B=128)** | `12,084.8` | `3,401.2` | `-8,683.7` |
+| **Latency P50 (ms, B=1)** | `0.167 ms` | `0.712 ms` | `+0.544 ms` |
+| **Latency P95 (ms, B=1)** | `0.188 ms` | `1.317 ms` | `+1.128 ms` |
+| **Throughput (samples/s, B=128)** | `17,576.3` | `4,233.3` | `-13,342.9` |
 
 ---
 
@@ -34,15 +34,15 @@ This report presents a head-to-head empirical comparison between **CNN (MNISTCon
 
 | Batch Size | Metric | **CNN (MNISTConvNet)** | **Transformer (MNISTViT)** |
 | :---: | :--- | :---: | :---: |
-| **1** | P50 Latency | `0.371 ms` | `0.852 ms` |
-| **1** | P95 Latency | `0.944 ms` | `0.992 ms` |
-| **1** | Throughput | `2,171.7 sps` | `1,144.6 sps` |
-| **32** | P50 Latency | `3.685 ms` | `9.371 ms` |
-| **32** | P95 Latency | `8.296 ms` | `9.945 ms` |
-| **32** | Throughput | `7,307.8 sps` | `3,389.3 sps` |
-| **128** | P50 Latency | `10.135 ms` | `37.202 ms` |
-| **128** | P95 Latency | `12.640 ms` | `40.810 ms` |
-| **128** | Throughput | `12,084.8 sps` | `3,401.2 sps` |
+| **1** | P50 Latency | `0.167 ms` | `0.712 ms` |
+| **1** | P95 Latency | `0.188 ms` | `1.317 ms` |
+| **1** | Throughput | `5,854.9 sps` | `1,203.9 sps` |
+| **32** | P50 Latency | `2.234 ms` | `7.630 ms` |
+| **32** | P95 Latency | `2.373 ms` | `9.174 ms` |
+| **32** | Throughput | `14,151.6 sps` | `4,119.7 sps` |
+| **128** | P50 Latency | `6.794 ms` | `29.503 ms` |
+| **128** | P95 Latency | `9.078 ms` | `33.610 ms` |
+| **128** | Throughput | `17,576.3 sps` | `4,233.3 sps` |
 
 ---
 
@@ -50,16 +50,16 @@ This report presents a head-to-head empirical comparison between **CNN (MNISTCon
 
 | Digit Class | **CNN (MNISTConvNet)** | **Transformer (MNISTViT)** | Difference |
 | :---: | :---: | :---: | :---: |
-| **Digit 0** | `0.9903` | `0.9772` | `-0.0132` |
-| **Digit 1** | `0.9938` | `0.9864` | `-0.0074` |
-| **Digit 2** | `0.9860` | `0.9482` | `-0.0379` |
-| **Digit 3** | `0.9920` | `0.9504` | `-0.0416` |
-| **Digit 4** | `0.9944` | `0.9494` | `-0.0450` |
-| **Digit 5** | `0.9888` | `0.9454` | `-0.0435` |
-| **Digit 6** | `0.9875` | `0.9628` | `-0.0247` |
-| **Digit 7** | `0.9859` | `0.9528` | `-0.0330` |
-| **Digit 8** | `0.9866` | `0.9451` | `-0.0416` |
-| **Digit 9** | `0.9870` | `0.9423` | `-0.0447` |
+| **Digit 0** | `0.9934` | `0.9662` | `-0.0271` |
+| **Digit 1** | `0.9925` | `0.9859` | `-0.0066` |
+| **Digit 2** | `0.9864` | `0.9535` | `-0.0329` |
+| **Digit 3** | `0.9916` | `0.9313` | `-0.0602` |
+| **Digit 4** | `0.9889` | `0.9591` | `-0.0298` |
+| **Digit 5** | `0.9855` | `0.9356` | `-0.0499` |
+| **Digit 6** | `0.9853` | `0.9643` | `-0.0210` |
+| **Digit 7** | `0.9844` | `0.9403` | `-0.0441` |
+| **Digit 8** | `0.9867` | `0.9274` | `-0.0592` |
+| **Digit 9** | `0.9785` | `0.9162` | `-0.0623` |
 
 ---
 

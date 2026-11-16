@@ -98,9 +98,12 @@ def run_app() -> None:
     )
 
     default_repo_id = os.environ.get("HF_MODEL_REPO_ID", "chrisjcc/mnist-cnn")
-    default_ckpt = os.environ.get(
-        "MNIST_CHECKPOINT_PATH", "artifacts/checkpoints/checkpoint_best.pt"
+    default_candidate = (
+        "artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt"
+        if Path("artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt").exists()
+        else "artifacts/checkpoints/checkpoint_best.pt"
     )
+    default_ckpt = os.environ.get("MNIST_CHECKPOINT_PATH", default_candidate)
 
     with st.sidebar:
         st.header("⚙️ Model Configuration")

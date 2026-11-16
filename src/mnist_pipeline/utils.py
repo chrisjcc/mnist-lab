@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import platform
 import random
@@ -161,3 +162,60 @@ def load_json(path: str | Path) -> dict[str, Any]:
     if not isinstance(content, dict):
         raise ValueError(f"Expected JSON object in {target}, got {type(content).__name__}")
     return content
+
+
+def setup_logging(
+    log_file: str | Path | None = None,
+    log_dir: str | Path = "logs",
+    level: int = logging.INFO,
+    log_format: str = "%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+) -> logging.Logger:
+    """Configure root logging to both console (stdout) and a dedicated log file.
+
+    Args:
+        log_file: Optional log filename or path (e.g. 'train.log' or Path('logs/train.log')).
+        log_dir: Directory where logs should be stored if log_file is a relative filename.
+        level: Logging level (default: logging.INFO).
+        log_format: Format string for log messages.
+
+    Returns:
+        Root logger instance.
+    """
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    formatter = logging.Formatter(log_format)
+
+    # Ensure console stream handler exists
+    has_stream = any(
+        isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler)
+        for h in root_logger.handlers
+    )
+    if not has_stream:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(level)
+        stream_handler.setFormatter(formatter)
+        root_logger.addHandler(stream_handler)
+    else:
+        for h in root_logger.handlers:
+            if isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler):
+                h.setLevel(level)
+                h.setFormatter(formatter)
+
+    if log_file is not None:
+        file_path = Path(log_file)
+        if not file_path.is_absolute() and len(file_path.parts) == 1:
+            file_path = Path(log_dir) / file_path
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+
+        already_has_file = any(
+            isinstance(h, logging.FileHandler)
+            and getattr(h, "baseFilename", None) == str(file_path.resolve())
+            for h in root_logger.handlers
+        )
+        if not already_has_file:
+            file_handler = logging.FileHandler(file_path, mode="a", encoding="utf-8")
+            file_handler.setLevel(level)
+            file_handler.setFormatter(formatter)
+            root_logger.addHandler(file_handler)
+
+    return root_logger

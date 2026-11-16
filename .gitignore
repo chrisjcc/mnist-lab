@@ -222,6 +222,7 @@ __marimo__/
 # Project Data, DVC Cache, Hydra Outputs, and W&B
 /data/
 /artifacts/
+/logs/
 /outputs/
 /multirun/
 /wandb/

@@ -9,11 +9,8 @@ import sys
 from pathlib import Path
 
 from mnist_pipeline.comparison import generate_model_comparison
+from mnist_pipeline.utils import setup_logging
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
 LOGGER = logging.getLogger("compare_models")
 
 
@@ -47,6 +44,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Execute model comparison CLI workflow."""
+    setup_logging(log_file="logs/compare_models.log")
     args = parse_args()
 
     models_dict: dict[str, Path] = {}
