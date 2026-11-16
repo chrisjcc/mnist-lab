@@ -124,9 +124,20 @@ def test_preprocess_canvas_for_mnist() -> None:
     assert float(np.max(res_alpha)) > 0.0
 
 
-def test_load_inference_model_vit_fallback(tmp_path: Path) -> None:
+def test_load_inference_model_vit_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify load_inference_model defaults to MNISTViT when ViT repo is specified without Hub access."""
+    from typing import Any
+
     from mnist_pipeline.model import MNISTViT
+
+    # Simulate Hub download error to test the untrained fallback branch deterministically
+    def mock_load_pretrained(*args: Any, **kwargs: Any) -> Any:
+        raise RuntimeError("Hub unavailable in test environment")
+
+    monkeypatch.setattr(
+        "mnist_pipeline.inference.load_model_from_pretrained",
+        mock_load_pretrained,
+    )
 
     nonexistent_ckpt = tmp_path / "nonexistent" / "checkpoint_best.pt"
     model, source = load_inference_model(
