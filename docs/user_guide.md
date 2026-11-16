@@ -800,13 +800,31 @@ flowchart TD
 1. **Model Architecture Selector**: A sidebar selectbox allows switching between:
    - **`CNN (Convolutional)`**: Points to `chrisjcc/mnist-cnn` (421k parameters, 2-block ConvNet + BatchNorm + Dropout).
    - **`ViT (Vision Transformer)`**: Points to `chrisjcc/mnist-vit` (318k parameters, 4-layer patch Transformer + self-attention).
-   - **`Custom Model / Repo`**: Allows entering any arbitrary Hugging Face repo ID or local checkpoint path.
-2. **In-Memory Caching (`@st.cache_resource`)**: When a user toggles between architectures, the previously loaded weights stay cached in memory, eliminating redundant Hub downloads and re-initialization latency.
-3. **Active Model Badge**: Displays the active architecture name, total trainable parameters, and loaded source provenance.
+   - **`Custom Model / Repo`**: Unlocks custom configuration for arbitrary Hugging Face repositories or local checkpoint paths.
+2. **In-Memory Caching (`@st.cache_resource`)**: When a user toggles between architectures, previously loaded weights remain cached in memory, eliminating redundant Hub downloads and re-initialization latency.
+3. **Active Model Badge**: Displays the active architecture name, total trainable parameters, and loaded source provenance (`hf_hub:...`, `local_checkpoint:...`, `local_safetensors:...`, or `untrained_fallback`).
 4. **Interactive Input Modes**:
    - **✏️ Draw a Digit**: Freehand HTML5 canvas (`streamlit-drawable-canvas`).
    - **📤 Upload an Image**: Upload `PNG`/`JPG`/`JPEG` with automatic or manual polarity inversion.
    - **🧪 Test Set Gallery**: Explore 10,000 canonical MNIST test samples with ground-truth verification.
+
+#### Multi-Model Selection Modes & Custom Repositories
+
+The sidebar **Model Architecture** selectbox provides three operation modes:
+
+| Mode | Target Repository | Default Fallback Checkpoint | Input Fields | Primary Use Case |
+| :--- | :--- | :--- | :---: | :--- |
+| **`CNN (Convolutional)`** | `chrisjcc/mnist-cnn` | `artifacts/models/mnist_cnn/checkpoints/checkpoint_best.pt` | Hidden | Standard inference using the trained 2-block ConvNet (~421k params). |
+| **`ViT (Vision Transformer)`** | `chrisjcc/mnist-vit` | `artifacts/models/mnist_vit/checkpoints/checkpoint_best.pt` | Hidden | Comparative inference using the Vision Transformer (~318k params). |
+| **`Custom Model / Repo`** | Configurable via text input | Configurable via text input | Visible | Developer escape hatch to test arbitrary checkpoints, sweep trials, or remote repos. |
+
+When **`Custom Model / Repo`** is selected, two input fields are revealed:
+1. **`Hugging Face Model Repo ID`**:
+   - Points the inference loader to any public or private Hugging Face Model Hub repository (e.g. `your-username/mnist-vit-fine-tuned`).
+   - Useful for evaluating experimental variants or third-party community models.
+2. **`Local Checkpoint Path (fallback)`**:
+   - Points to a local `.pt` checkpoint file or a directory containing `model.safetensors` on disk.
+   - Useful for testing unpromoted trial checkpoints from hyperparameter sweeps (e.g. `artifacts/sweeps/<sweep_id>/<run_id>/checkpoint_best.pt`), testing in-progress training checkpoints (`checkpoint_last.pt`), or running the demo in air-gapped / offline environments.
 
 ### Step 9.1: Run the Streamlit App Locally
 
