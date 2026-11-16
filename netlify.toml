@@ -1,0 +1,14 @@
+# Netlify Configuration for MNIST Lab Web Portal
+# Documentation: https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  publish = "public"
+  command = "echo 'Netlify build complete. Serving static web portal from public/'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

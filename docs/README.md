@@ -8,7 +8,8 @@ Welcome to the documentation hub for **MNIST Lab**, a production-grade, reproduc
 
 | Category | Document | Description |
 | :--- | :--- | :--- |
-| **User & Operations** | [`user_guide.md`](user_guide.md) | Comprehensive CLI reference, Makefile targets, environment setup, and deployment |
+| **User & Operations** | [`user_guide.md`](user_guide.md) | Comprehensive CLI reference, Makefile targets, environment setup, and deployment (HF Spaces, Streamlit Cloud, Netlify) |
+| **Web Portal** | [`../public/index.html`](../public/index.html) | Static web portal & benchmark dashboard configured for Netlify deployment |
 | **Architecture** | [`mnist_pytorch_pipeline_implementation_plan.md`](mnist_pytorch_pipeline_implementation_plan.md) | 5-phase engineering roadmap, directory contracts, and interface definitions |
 | **Tutorials** | [`tutorials/pytorch_nn_and_cnn_training_tutorial.md`](tutorials/pytorch_nn_and_cnn_training_tutorial.md) | Educational deep dive into CNN layer mechanics, backpropagation, and training loops |
 | **Model Card** | [`model_card.md`](model_card.md) | Hugging Face-compliant model card for `MNISTConvNet` (architecture, performance, licenses) |

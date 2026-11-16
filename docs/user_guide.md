@@ -16,6 +16,7 @@ This guide provides end-to-end instructions for setting up the environment, repr
 8. [Uploading the Model, Model Card, and Artifacts to Hugging Face Hub](#8-uploading-the-model-model-card-and-artifacts-to-hugging-face-hub)
 9. [Building and Deploying the Streamlit Demo as a Hugging Face Docker Space](#9-building-and-deploying-the-streamlit-demo-as-a-hugging-face-docker-space)
 10. [Attaching Trained Model Checkpoints to GitHub Releases (Offline Distribution)](#10-attaching-trained-model-checkpoints-to-github-releases-offline-distribution)
+11. [Deploying the Project: Hugging Face Spaces, Streamlit Cloud, and Netlify](#11-deploying-the-project-hugging-face-spaces-streamlit-cloud-and-netlify)
 
 ---
 
@@ -708,4 +709,77 @@ curl -LO "https://github.com/chrisjcc/mnist-lab/releases/download/${RELEASE_TAG}
 
 #### Option C: Web Browser
 Navigate to `https://github.com/chrisjcc/mnist-lab/releases/tag/<RELEASE_TAG>` and click any file in the **Assets** list.
+
+---
+
+## 11. Deploying the Project: Hugging Face Spaces, Streamlit Cloud, and Netlify
+
+This section clarifies the architectural roles of different hosting platforms and provides clear guidance on where and how each component of the project should be deployed.
+
+### 11.1 Platform Capabilities & Architectural Comparison
+
+| Capability | Netlify | Hugging Face Spaces | Streamlit Community Cloud |
+| :--- | :--- | :--- | :--- |
+| **Hosting Type** | Static Site / Jamstack & Serverless | Container Runtime & ML Hosting | Python Application Cloud |
+| **Free Tier** | 100 GB bandwidth/mo, unlimited sites | 2 vCPU, 16 GB RAM (Docker or Python) | 1 GB RAM, 1 active app |
+| **Builds `Dockerfile`?** | ❌ No (ignores Dockerfile) | ✅ Yes (Full Docker container support) | ❌ No (Python `requirements.txt`) |
+| **Persistent Process?** | ❌ No (serverless/static only) | ✅ Yes (always-on or auto-sleep container) | ✅ Yes (persistent Python runtime) |
+| **WebSocket / Streamlit?**| ❌ No (cannot host Streamlit server) | ✅ Yes (native WebSocket support) | ✅ Yes (native Streamlit platform) |
+| **Ideal Project Role** | **Static Web Portal, Reports & Docs** | **Interactive Streamlit Docker App** | **Interactive Streamlit Python App** |
+
+---
+
+### 11.2 Understanding the Netlify 404 Error
+
+When connecting a Git repository to Netlify:
+1. **Root Cause**: Netlify searches for an `index.html` file within the configured publish directory (which defaults to the repository root `.`). Because the repository root contained no `index.html`, Netlify deployed an empty document root, returning HTTP 404 (`Page not found`).
+2. **Docker Incompatibility**: Netlify does not execute `Dockerfile`s or launch persistent background daemons (e.g., `streamlit run app/app.py`).
+3. **Resolution in `mnist-lab`**:
+   - The repository provides [`netlify.toml`](../netlify.toml) configured to publish the [`public/`](../public/) directory.
+   - The [`public/index.html`](../public/index.html) file serves a modern, responsive web portal showcasing model benchmark statistics, an interactive HTML5 canvas preprocessor, and direct links to the live Streamlit demo.
+
+---
+
+### 11.3 Deploying the Interactive Streamlit Demo (Free Options)
+
+To host the interactive demo found in `app/`:
+
+#### Option A: Hugging Face Spaces (Recommended — Docker)
+
+Hugging Face Spaces provides a free 16 GB RAM environment tailored for PyTorch machine learning apps.
+
+1. Navigate to [Hugging Face Spaces](https://huggingface.co/spaces) and click **Create new Space**.
+2. Set **Space Name** to `mnist-lab`.
+3. Select **Docker** as the Space SDK and choose **Blank** template.
+4. Set visibility to **Public**.
+5. Connect your GitHub repository or push the codebase to the Space Git remote:
+   ```bash
+   git remote add space https://huggingface.co/spaces/<your-username>/mnist-lab
+   git push space main
+   ```
+6. Hugging Face Spaces automatically detects [`Dockerfile`](../Dockerfile), builds the image with non-root user `1000`, and exposes port `8501`.
+
+#### Option B: Streamlit Community Cloud (Zero-Config Python)
+
+1. Navigate to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub.
+2. Click **New app**.
+3. Select repository `chrisjcc/mnist-lab` and branch `main`.
+4. Set **Main file path** to `app/app.py`.
+5. Click **Deploy!**
+
+---
+
+### 11.4 Deploying the Static Web Portal to Netlify
+
+To deploy the static project landing page:
+
+1. Sign in to [Netlify](https://app.netlify.com).
+2. Click **Add new site** &rarr; **Import an existing project**.
+3. Select **GitHub** and authorize access to `mnist-lab`.
+4. Netlify automatically reads [`netlify.toml`](../netlify.toml):
+   - **Publish directory**: `public`
+   - **Build command**: `echo 'Netlify build complete.'`
+5. Click **Deploy site**.
+6. The site will deploy instantly without 404 errors, serving the responsive web portal with interactive canvas preprocessor.
+
 
