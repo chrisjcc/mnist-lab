@@ -1,4 +1,5 @@
 name: mnist_cnn
+architecture: cnn
 in_channels: ${param:model.in_channels, 1}
 conv_channels: ${param:model.conv_channels, [32, 64]}
 kernel_size: ${param:model.kernel_size, 3}

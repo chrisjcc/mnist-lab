@@ -1,0 +1,12 @@
+# Vision Transformer (ViT) model configuration preset
+name: mnist_vit
+architecture: transformer
+in_channels: ${param:model.in_channels, 1}
+num_classes: ${param:model.num_classes, 10}
+patch_size: 4
+embed_dim: 128
+depth: 4
+num_heads: 4
+mlp_ratio: 2.0
+dropout: 0.1
+attention_dropout: 0.0

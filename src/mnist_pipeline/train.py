@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader
 from mnist_pipeline.config import PipelineConfig, TrainConfig
 from mnist_pipeline.data import build_dataloaders
 from mnist_pipeline.model import (
-    MNISTConvNet,
+    build_model,
     count_trainable_parameters,
     load_checkpoint,
     save_checkpoint,
@@ -114,7 +114,7 @@ def build_optimizer(model: nn.Module, cfg: TrainConfig) -> torch.optim.Optimizer
 
 
 def run_train_epoch(
-    model: MNISTConvNet,
+    model: nn.Module,
     loader: DataLoader[tuple[torch.Tensor, ...]],
     criterion: nn.Module,
     optimizer: torch.optim.Optimizer,
@@ -124,7 +124,7 @@ def run_train_epoch(
     """Run one training epoch and return sample-weighted average loss and accuracy.
 
     Args:
-        model: MNISTConvNet instance.
+        model: PyTorch model instance.
         loader: Training DataLoader.
         criterion: Loss function (CrossEntropyLoss).
         optimizer: Optimizer instance.
@@ -164,7 +164,7 @@ def run_train_epoch(
 
 
 def run_validation_epoch(
-    model: MNISTConvNet,
+    model: nn.Module,
     loader: DataLoader[tuple[torch.Tensor, ...]],
     criterion: nn.Module,
     device: torch.device,
@@ -173,7 +173,7 @@ def run_validation_epoch(
     """Run one gradient-free validation epoch and return average loss and accuracy.
 
     Args:
-        model: MNISTConvNet instance.
+        model: PyTorch model instance.
         loader: Validation DataLoader.
         criterion: Loss function (CrossEntropyLoss).
         device: Target compute device.
@@ -251,7 +251,7 @@ def train_model(cfg: PipelineConfig) -> TrainingSummary:
     device = resolve_device(cfg.train.device)
     bundle = build_dataloaders(cfg, device=device)
 
-    model = MNISTConvNet(cfg.model).to(device)
+    model = build_model(cfg.model).to(device)
     optimizer = build_optimizer(model, cfg.train)
     criterion = nn.CrossEntropyLoss()
 

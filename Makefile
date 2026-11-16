@@ -38,7 +38,7 @@ DATASET_REPO ?= chrisjcc/mnist-dataset
 .PHONY: help \
         setup install install-dev lint format test setup-hooks clean \
         data preprocess dvc-repro pipeline \
-        train evaluate benchmark report \
+        train evaluate benchmark report compare-models \
         smoke-eval evaluate-mve \
         sweep sweep-smoke sweep-report sweep-promote sweep-publish-hf \
         generate-hf-cards publish-hf-cards publish-hf-model publish-hf-dataset publish-hf-release \
@@ -170,6 +170,9 @@ smoke-eval:
 
 evaluate-mve:
 	$(PYTHON) scripts/run_mve_evaluation.py $(ARGS)
+
+compare-models:
+	$(PYTHON) scripts/compare_models.py $(ARGS)
 
 # ------------------------------------------------------------
 # 4. Hyperparameter Optimization (Weights & Biases Sweeps)

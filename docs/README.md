@@ -15,6 +15,7 @@ Welcome to the documentation hub for **MNIST Lab**, a production-grade, reproduc
 | **Dataset Card** | [`dataset_card.md`](dataset_card.md) | Dataset curation, deterministic stratified splits (54k/6k/10k), and preprocessing specs |
 | **Baseline Study** | [`experiments/mve_baseline_study.md`](experiments/mve_baseline_study.md) | Minimum Viable Experiment (MVE-001) results & 5/5 quantitative acceptance gates |
 | **Sweep Study** | [`experiments/sweep_study.md`](experiments/sweep_study.md) | Bayesian hyperparameter search study (`c6dont3r`), Hyperband early stopping & champion analysis |
+| **Architecture Comparison** | [`experiments/cnn_vs_transformer_study.md`](experiments/cnn_vs_transformer_study.md) | Head-to-head empirical comparison study: CNN (`MNISTConvNet`) vs. Vision Transformer (`MNISTViT`) |
 | **Research & Feasibility** | [`research/transformer_mnist_feasibility_study.md`](research/transformer_mnist_feasibility_study.md) | Vision Transformer (ViT) vs. CNN comparative feasibility study & integration blueprint |
 
 ---
@@ -26,6 +27,7 @@ All persistent experiment findings and diagnostic figures are curated under [`do
 ### 1. Studies
 - **[Minimum Viable Experiment (MVE) Baseline](experiments/mve_baseline_study.md)**: Deterministic 5-epoch baseline evaluation achieving **98.93% test accuracy** and passing all 5 acceptance criteria gates.
 - **[Bayesian Hyperparameter Sweep Study](experiments/sweep_study.md)**: 5-trial Bayesian search optimizing learning rate, optimizer (`adam`, `adamw`, `sgd`), dropout, batch size, and weight decay, with champion model **`stellar-sweep-5`** achieving **98.77% validation accuracy**.
+- **[CNN vs. Vision Transformer Comparative Study](experiments/cnn_vs_transformer_study.md)**: Comprehensive empirical evaluation and latency/throughput profiling comparing `MNISTConvNet` (99.04% accuracy, 0.41 ms latency) against `MNISTViT` (95.70% accuracy, 0.90 ms latency).
 
 ### 2. Diagnostic Figures
 - **Baseline Figures** ([`docs/experiments/figures/`](experiments/figures/)): Loss curve, accuracy curve, 10x10 confusion matrix, and 4x4 test sample prediction grid.

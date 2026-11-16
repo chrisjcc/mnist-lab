@@ -9,11 +9,11 @@ defaults:
 
 paths:
   artifacts_dir: artifacts
-  checkpoints_dir: artifacts/checkpoints
-  evaluation_dir: artifacts/evaluation
-  benchmarks_dir: artifacts/benchmarks
-  reports_dir: artifacts/reports
-  plots_dir: artifacts/reports/plots
+  checkpoints_dir: ${paths.artifacts_dir}/checkpoints
+  evaluation_dir: ${paths.artifacts_dir}/evaluation
+  benchmarks_dir: ${paths.artifacts_dir}/benchmarks
+  reports_dir: ${paths.artifacts_dir}/reports
+  plots_dir: ${paths.reports_dir}/plots
   templates_dir: templates
   docs_dir: docs
 
