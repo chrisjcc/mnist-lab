@@ -275,6 +275,64 @@ Notice that `train.lr` resolves to `0.005` (the CLI override), whereas non-overr
 make train ARGS="train.resume_from=artifacts/checkpoints/checkpoint_last.pt train.epochs=8"
 ```
 
+### Step 3.5: Training with On-the-Fly Data Augmentation (`RandomAffine`) for Canvas Robustness
+
+Even when a CNN achieves **~99% test set accuracy** on canonical MNIST, it can struggle on interactive freehand web canvas drawings (such as misclassifying **`7` as `5`**). To bridge the distribution shift between centered MNIST scans and human drawing variations, the pipeline provides configurable affine data augmentation using `torchvision.transforms.RandomAffine`.
+
+#### How It Works: In-Memory / On-the-Fly vs. Offline Preprocessing
+
+Data augmentation is handled **in memory, on the fly during training DataLoader iteration** (via `AugmentedTensorDataset`), rather than during offline data preprocessing (`make data`).
+
+- **Why In-Memory is MLOps Best Practice**:
+  1. **Dynamic Epoch Diversity**: Preprocessing and saving augmented images to disk creates a static dataset where each sample has only one fixed augmented state. With on-the-fly augmentation, every epoch generates a new random rotation, translation, and scale for each sample. Across 5–20 epochs, the network sees effectively infinite handwriting variations.
+  2. **Storage Efficiency & DVC Purity**: Offline augmentation would expand dataset storage by $5\times$ to $10\times$ and invalidate deterministic DVC tracking hashes. In-memory augmentation keeps `data/processed/train.pt` compact (54k samples) and 100% reproducible.
+  3. **Evaluation Purity**: Validation (`val.pt`) and held-out test (`test.pt`) partitions are **never augmented**. They remain completely deterministic to ensure rigorous, unbiased evaluation.
+  4. **Background Value Preservation**: In normalized MNIST tensors, black background pixels have value `(0.0 - mean) / std = -0.4242`. The pipeline dynamically configures `RandomAffine(fill=...)` to fill newly exposed border pixels with `-0.4242`, preventing gray-border edge artifacts.
+
+#### Configuration Schema (`params.yaml` & `configs/data/mnist.yaml`)
+
+```yaml
+data:
+  augmentation:
+    enabled: false          # Toggle on-the-fly RandomAffine augmentation
+    degrees: 12.0           # Maximum random rotation angle in degrees ([-12, +12])
+    translate: [0.12, 0.12] # Max horizontal and vertical translation fraction
+    scale: [0.85, 1.15]     # Min and max scale factor range
+```
+
+#### Running Training with Data Augmentation
+
+**Option A: Command-Line Hydra Overrides**:
+
+```bash
+# Enable data augmentation with default parameters
+make train ARGS="data.augmentation.enabled=true"
+
+# Or customize rotation, translation, and scale ranges
+make train ARGS="data.augmentation.enabled=true data.augmentation.degrees=15.0 data.augmentation.translate=[0.15,0.15] data.augmentation.scale=[0.8,1.2]"
+```
+
+**Option B: Setting SSOT in `params.yaml`**:
+
+In [`params.yaml`](../params.yaml), set:
+
+```yaml
+data:
+  augmentation:
+    enabled: true
+    degrees: 12.0
+    translate: [0.12, 0.12]
+    scale: [0.85, 1.15]
+```
+
+Then run `make train` or full DVC reproduction:
+
+```bash
+make train
+# or
+make dvc-repro
+```
+
 ### Generated Training Artifacts
 
 - `artifacts/checkpoints/checkpoint_best.pt`: Full PyTorch training state at highest validation accuracy
@@ -282,6 +340,7 @@ make train ARGS="train.resume_from=artifacts/checkpoints/checkpoint_last.pt trai
 - `artifacts/checkpoints/model.safetensors` & `artifacts/checkpoints/config.json`: Hugging Face Hub-ready SafeTensors weights and architecture metadata
 - `artifacts/reports/train_history.csv`: Epoch-by-epoch `train_loss`, `train_accuracy`, `val_loss`, `val_accuracy`, `lr`, and `epoch_time_sec`
 - `artifacts/reports/environment.json`: Hardware, OS, Python, PyTorch, and seed provenance
+
 
 ---
 

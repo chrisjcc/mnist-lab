@@ -81,3 +81,35 @@ def test_preprocess_and_build_dataloaders_with_synthetic_fallback(tmp_path: Path
     batch_images, batch_labels = next(iter(bundle.train_loader))
     validate_batch_contract(batch_images, batch_labels)
     assert batch_images.shape == (16, 1, 28, 28)
+
+
+def test_build_dataloaders_with_augmentation(tmp_path: Path) -> None:
+    """Verify on-the-fly RandomAffine data augmentation during DataLoader iteration."""
+    from mnist_pipeline.config import AugmentationConfig
+
+    cfg = PipelineConfig(
+        data=DataConfig(
+            raw_dir=str(tmp_path / "raw"),
+            processed_dir=str(tmp_path / "processed"),
+            download=False,
+            val_fraction=0.2,
+            batch_size=16,
+            seed=42,
+            allow_synthetic_fallback=True,
+            num_synthetic_train=100,
+            num_synthetic_test=30,
+            augmentation=AugmentationConfig(
+                enabled=True,
+                degrees=15.0,
+                translate=[0.12, 0.12],
+                scale=[0.85, 1.15],
+            ),
+        )
+    )
+    preprocess_mnist_data(cfg.data)
+    bundle = build_dataloaders(cfg, device=torch.device("cpu"))
+    batch_images, batch_labels = next(iter(bundle.train_loader))
+    validate_batch_contract(batch_images, batch_labels)
+    assert batch_images.shape == (16, 1, 28, 28)
+    assert batch_images.dtype == torch.float32
+    assert torch.isfinite(batch_images).all()

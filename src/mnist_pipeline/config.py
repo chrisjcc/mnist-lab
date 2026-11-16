@@ -149,6 +149,23 @@ except Exception:
 
 
 @dataclass
+class AugmentationConfig:
+    """Configuration for on-the-fly training data augmentation.
+
+    Attributes:
+        enabled: Whether to apply torchvision RandomAffine augmentation during training.
+        degrees: Maximum random rotation angle in degrees ([-degrees, +degrees]).
+        translate: Maximum horizontal and vertical random translation fraction ([tx, ty]).
+        scale: Random scale factor range ([min_scale, max_scale]).
+    """
+
+    enabled: bool = False
+    degrees: float = 12.0
+    translate: list[float] = field(default_factory=lambda: [0.12, 0.12])
+    scale: list[float] = field(default_factory=lambda: [0.85, 1.15])
+
+
+@dataclass
 class DataConfig:
     """Configuration for MNIST dataset downloading, splitting, and loading.
 
@@ -166,6 +183,7 @@ class DataConfig:
         allow_synthetic_fallback: Whether to generate synthetic data if download fails.
         num_synthetic_train: Number of synthetic training samples when fallback is enabled.
         num_synthetic_test: Number of synthetic test samples when fallback is enabled.
+        augmentation: Configuration for on-the-fly RandomAffine data augmentation during training.
     """
 
     raw_dir: str = "data/raw"
@@ -181,6 +199,7 @@ class DataConfig:
     allow_synthetic_fallback: bool = False
     num_synthetic_train: int = 600
     num_synthetic_test: int = 100
+    augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
 
 
 @dataclass
@@ -379,6 +398,25 @@ def validate_config(cfg: PipelineConfig | DictConfig) -> None:
         raise ValueError(f"data.std must be positive, got {cfg.data.std}")
     if cfg.data.num_workers < 0:
         raise ValueError(f"data.num_workers must be >= 0, got {cfg.data.num_workers}")
+    if cfg.data.augmentation.enabled:
+        if cfg.data.augmentation.degrees < 0.0:
+            raise ValueError(
+                f"data.augmentation.degrees must be >= 0, got {cfg.data.augmentation.degrees}"
+            )
+        if len(cfg.data.augmentation.translate) != 2 or any(
+            t < 0.0 or t > 1.0 for t in cfg.data.augmentation.translate
+        ):
+            raise ValueError(
+                f"data.augmentation.translate must have 2 floats in [0, 1], got {cfg.data.augmentation.translate}"
+            )
+        if (
+            len(cfg.data.augmentation.scale) != 2
+            or cfg.data.augmentation.scale[0] <= 0.0
+            or cfg.data.augmentation.scale[0] > cfg.data.augmentation.scale[1]
+        ):
+            raise ValueError(
+                f"data.augmentation.scale must be [min, max] with 0 < min <= max, got {cfg.data.augmentation.scale}"
+            )
 
     if cfg.model.in_channels <= 0:
         raise ValueError(f"model.in_channels must be positive, got {cfg.model.in_channels}")
