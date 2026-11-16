@@ -9,8 +9,7 @@ from typing import Any
 
 import numpy as np
 import torch
-import torch.nn as nn
-from PIL import Image, ImageOps
+from PIL import Image
 
 from mnist_pipeline.model import MNISTConvNet, load_checkpoint, load_model_from_pretrained
 
@@ -230,7 +229,7 @@ def load_inference_model(
     revision: str = "main",
     cache_dir: str | Path | None = "artifacts/hf_cache",
     device: str | torch.device = "cpu",
-) -> tuple[nn.Module, str]:
+) -> tuple[torch.nn.Module, str]:
     """Load an `MNISTConvNet` for inference with resilient local and Hub fallback.
 
     Resolution order:
@@ -309,7 +308,7 @@ def load_inference_model(
 
 
 def predict_tensor(
-    model: nn.Module,
+    model: torch.nn.Module,
     image_tensor: torch.Tensor,
     device: str | torch.device = "cpu",
     mean: float = 0.1307,
@@ -360,7 +359,7 @@ def predict_tensor(
 
 
 def predict_pil_image(
-    model: nn.Module,
+    model: torch.nn.Module,
     image: Image.Image,
     invert: bool = False,
     auto_invert: bool = False,
