@@ -73,3 +73,63 @@ def test_run_trial_smoke_execution_and_ssot_preservation() -> None:
     assert cfg.train.optimizer == "adam"
     assert cfg.model.in_channels == 1
     assert cfg.data.val_fraction == pytest.approx(0.1)
+
+
+def test_build_hydra_overrides_transformer_parameters() -> None:
+    """Verify build_hydra_overrides translates ViT architecture hyperparameters."""
+    sweep_params: dict[str, Any] = {
+        "model": "transformer",
+        "depth": 3,
+        "num_heads": 4,
+        "embed_dim": 128,
+        "mlp_ratio": 2.0,
+        "attention_dropout": 0.05,
+        "patch_size": 4,
+        "dropout": 0.1,
+    }
+    overrides = build_hydra_overrides(sweep_params)
+
+    assert "model=transformer" in overrides
+    assert "model.depth=3" in overrides
+    assert "model.num_heads=4" in overrides
+    assert "model.embed_dim=128" in overrides
+    assert "model.mlp_ratio=2.0" in overrides
+    assert "model.attention_dropout=0.05" in overrides
+    assert "model.patch_size=4" in overrides
+    assert "model.dropout=0.1" in overrides
+
+    # Verify Hydra loads cleanly with these translated overrides
+    cfg = load_hydra_config(overrides=overrides)
+    assert cfg.model.architecture == "transformer"
+    assert cfg.model.depth == 3
+    assert cfg.model.num_heads == 4
+    assert cfg.model.embed_dim == 128
+    assert cfg.model.mlp_ratio == 2.0
+    assert cfg.model.attention_dropout == 0.05
+
+
+def test_transformer_sweep_yaml_validity() -> None:
+    """Verify sweeps/transformer_bayes.yaml parses as valid W&B sweep configuration."""
+    from pathlib import Path
+
+    import yaml
+
+    sweep_file = Path("sweeps") / "transformer_bayes.yaml"
+    assert sweep_file.exists()
+
+    with sweep_file.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    assert data["name"] == "mnist-vit-bayes-sweep"
+    assert data["method"] == "bayes"
+    assert data["program"] == "scripts/run_sweep_trial.py"
+    assert data["metric"]["name"] == "val/accuracy"
+    assert data["metric"]["goal"] == "maximize"
+
+    params = data["parameters"]
+    assert params["model"]["value"] == "transformer"
+    assert "depth" in params
+    assert "num_heads" in params
+    assert "embed_dim" in params
+    assert "learning_rate" in params
+    assert "optimizer" in params

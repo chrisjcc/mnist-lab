@@ -86,6 +86,32 @@ def update_params_yaml(
         val = champion_params.get("dropout", champion_params.get("model.dropout"))
         if val is not None:
             data["model"]["dropout"] = float(val)
+    if "attention_dropout" in champion_params or "model.attention_dropout" in champion_params:
+        val = champion_params.get(
+            "attention_dropout", champion_params.get("model.attention_dropout")
+        )
+        if val is not None:
+            data["model"]["attention_dropout"] = float(val)
+    if "depth" in champion_params or "model.depth" in champion_params:
+        val = champion_params.get("depth", champion_params.get("model.depth"))
+        if val is not None:
+            data["model"]["depth"] = int(val)
+    if "num_heads" in champion_params or "model.num_heads" in champion_params:
+        val = champion_params.get("num_heads", champion_params.get("model.num_heads"))
+        if val is not None:
+            data["model"]["num_heads"] = int(val)
+    if "embed_dim" in champion_params or "model.embed_dim" in champion_params:
+        val = champion_params.get("embed_dim", champion_params.get("model.embed_dim"))
+        if val is not None:
+            data["model"]["embed_dim"] = int(val)
+    if "mlp_ratio" in champion_params or "model.mlp_ratio" in champion_params:
+        val = champion_params.get("mlp_ratio", champion_params.get("model.mlp_ratio"))
+        if val is not None:
+            data["model"]["mlp_ratio"] = float(val)
+    if "patch_size" in champion_params or "model.patch_size" in champion_params:
+        val = champion_params.get("patch_size", champion_params.get("model.patch_size"))
+        if val is not None:
+            data["model"]["patch_size"] = int(val)
     if "batch_size" in champion_params or "data.batch_size" in champion_params:
         val = champion_params.get("batch_size", champion_params.get("data.batch_size"))
         if val is not None:

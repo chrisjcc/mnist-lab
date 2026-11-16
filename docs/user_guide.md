@@ -472,11 +472,18 @@ parameters:
 
 #### 2. Launching a Sweep
 
+The repository provides Bayesian sweep definitions for both architectures under [`sweeps/`](../sweeps/):
+- **CNN Sweep**: [`sweeps/cnn_bayes.yaml`](../sweeps/cnn_bayes.yaml) (searches learning rate, weight decay, optimizer, batch size, and dropout).
+- **Vision Transformer Sweep**: [`sweeps/transformer_bayes.yaml`](../sweeps/transformer_bayes.yaml) (searches attention depth, self-attention heads, embedding dimensions, MLP expansion ratio, learning rate, and attention dropout).
+
 ```bash
-# Initialize and execute 5 Bayesian sweep trials
+# 1. Initialize and execute 5 Bayesian sweep trials for CNN (default)
 make sweep COUNT=5
 
-# Or run a fast local 1-epoch sweep trial smoke check (< 1s)
+# 2. Initialize and execute 5 Bayesian sweep trials for Vision Transformer (ViT)
+make sweep SWEEP_CONFIG=sweeps/transformer_bayes.yaml COUNT=5
+
+# 3. Fast local 1-epoch sweep trial smoke check (< 1s)
 make sweep-smoke
 ```
 
