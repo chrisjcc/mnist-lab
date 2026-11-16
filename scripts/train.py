@@ -23,8 +23,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Hydra DictConfig composed from configs/config.yaml.
     """
     pipeline_cfg = to_pipeline_config(cfg)
-    log_dir = pipeline_cfg.paths.logs_dir
-    setup_logging(log_file=f"{log_dir}/train.log")
+    setup_logging(log_file=pipeline_cfg.paths.logs_path / "train.log")
     summary = train_model(pipeline_cfg)
     logger.info(
         "Training finished: best_epoch=%d, best_val_accuracy=%.4f, total_time=%.2fs, best_ckpt=%s",

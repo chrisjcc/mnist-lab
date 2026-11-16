@@ -24,8 +24,7 @@ def main(cfg: DictConfig) -> None:
         cfg: Composed Hydra `DictConfig`.
     """
     pipeline_cfg = to_pipeline_config(cfg)
-    log_dir = pipeline_cfg.paths.logs_dir
-    setup_logging(log_file=f"{log_dir}/evaluate.log")
+    setup_logging(log_file=pipeline_cfg.paths.logs_path / "evaluate.log")
     metrics = evaluate_checkpoint(pipeline_cfg)
     LOGGER.info(
         "Evaluation finished: test_acc=%.4f | macro_f1=%.4f | test_loss=%.4f",

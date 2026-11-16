@@ -105,7 +105,7 @@ def update_params_yaml(
 def promote_champion(
     sweep_id: str | None = None,
     run_id: str | None = None,
-    sweeps_dir: str | Path = "artifacts/sweeps",
+    sweeps_dir: str | Path = Path("artifacts") / "sweeps",
     update_ssot: bool = True,
     evaluate_model: bool = True,
     publish_hf: bool = False,
@@ -310,7 +310,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sweeps-dir",
         type=str,
-        default="artifacts/sweeps",
+        default=str(Path("artifacts") / "sweeps"),
         help="Path to directory containing sweep trial ledgers.",
     )
     parser.add_argument(
@@ -357,7 +357,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """CLI entrypoint for promote_sweep script."""
-    setup_logging(log_file="logs/promote_sweep.log")
+    setup_logging(log_file=Path("logs") / "promote_sweep.log")
     args = parse_args()
 
     if args.report_only:

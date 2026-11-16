@@ -155,16 +155,16 @@ def run_trial(
     )
     run_name = (getattr(run, "name", None) if run is not None else None) or str(run_id)
 
-    trial_dir = Path("artifacts/sweeps") / str(sweep_id) / str(run_id)
+    trial_dir = Path("artifacts") / "sweeps" / str(sweep_id) / str(run_id)
     trial_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy trial checkpoint & train history to isolated folder
-    ckpt_src = Path(pipeline_cfg.paths.checkpoints_dir) / "checkpoint_best.pt"
+    ckpt_src = pipeline_cfg.paths.checkpoints_path / "checkpoint_best.pt"
     trial_ckpt = trial_dir / "checkpoint_best.pt"
     if ckpt_src.exists():
         shutil.copy2(ckpt_src, trial_ckpt)
 
-    hist_src = Path(pipeline_cfg.paths.reports_dir) / "train_history.csv"
+    hist_src = pipeline_cfg.paths.reports_path / "train_history.csv"
     trial_hist = trial_dir / "train_history.csv"
     if hist_src.exists():
         shutil.copy2(hist_src, trial_hist)
@@ -187,7 +187,7 @@ def run_trial(
     }
 
     # Update ledger
-    ledger_file = Path("artifacts/sweeps") / str(sweep_id) / "trials.json"
+    ledger_file = Path("artifacts") / "sweeps" / str(sweep_id) / "trials.json"
     existing_trials: list[dict[str, Any]] = []
     if ledger_file.exists():
         try:
@@ -253,7 +253,7 @@ def parse_args(argv: list[str]) -> tuple[dict[str, Any], bool, list[str]]:
 
 def main() -> None:
     """CLI entrypoint for running a sweep trial."""
-    setup_logging(log_file="logs/sweep_trial.log")
+    setup_logging(log_file=Path("logs") / "sweep_trial.log")
     cli_dict, smoke, extra_overrides = parse_args(sys.argv[1:])
     run_trial(cli_args=cli_dict, smoke=smoke, extra_overrides=extra_overrides)
 

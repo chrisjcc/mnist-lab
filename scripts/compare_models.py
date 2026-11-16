@@ -24,19 +24,19 @@ def parse_args() -> argparse.Namespace:
         "--models",
         nargs="+",
         default=[
-            "CNN (MNISTConvNet)=artifacts/models/mnist_cnn",
-            "Transformer (MNISTViT)=artifacts/models/mnist_vit",
+            f"CNN (MNISTConvNet)={Path('artifacts') / 'models' / 'mnist_cnn'}",
+            f"Transformer (MNISTViT)={Path('artifacts') / 'models' / 'mnist_vit'}",
         ],
         help="List of model specifications in 'Label=path/to/artifacts_dir' format.",
     )
     parser.add_argument(
         "--output-dir",
-        default="artifacts/comparisons",
+        default=str(Path("artifacts") / "comparisons"),
         help="Directory to save the generated comparison report and plots.",
     )
     parser.add_argument(
         "--copy-to-docs",
-        default="docs/experiments/cnn_vs_transformer_study.md",
+        default=str(Path("docs") / "experiments" / "cnn_vs_transformer_study.md"),
         help="Optional destination path to copy the generated report to in docs/.",
     )
     return parser.parse_args()
@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     """Execute model comparison CLI workflow."""
-    setup_logging(log_file="logs/compare_models.log")
+    setup_logging(log_file=Path("logs") / "compare_models.log")
     args = parse_args()
 
     models_dict: dict[str, Path] = {}
@@ -58,7 +58,7 @@ def main() -> None:
         p_target = Path(path_str.strip())
         if (
             not p_target.exists()
-            and path_str.strip() == "artifacts/models/mnist_cnn"
+            and p_target == Path("artifacts") / "models" / "mnist_cnn"
             and (Path("artifacts") / "evaluation" / "test_metrics.json").exists()
         ):
             p_target = Path("artifacts")

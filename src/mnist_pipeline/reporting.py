@@ -802,7 +802,9 @@ def generate_sweep_report(
 
     # Also save to canonical reports dir
     canon_report_path = (
-        Path(output_path) if output_path is not None else Path("artifacts/reports/sweep_report.md")
+        Path(output_path)
+        if output_path is not None
+        else Path("artifacts") / "reports" / "sweep_report.md"
     )
     canon_report_path.parent.mkdir(parents=True, exist_ok=True)
     canon_report_path.write_text(report_content, encoding="utf-8")
