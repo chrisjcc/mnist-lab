@@ -133,7 +133,8 @@ All pipeline parameters are managed through composable Hydra YAML files in `conf
 configs/
 ├── config.yaml              # Root composition defaults
 ├── data/mnist.yaml          # Batch size, normalization, split fraction
-├── model/cnn.yaml           # Conv channels [32, 64], dropout, hidden_dim
+├── model/cnn.yaml           # Default CNN architecture (MNISTConvNet)
+├── model/transformer.yaml   # Vision Transformer architecture (MNISTViT)
 ├── train/default.yaml       # Epochs, learning rate, optimizer, device, seed
 ├── evaluate/default.yaml    # Eval batch size, benchmark warmup/timed runs
 ├── wandb/default.yaml       # W&B mode, project, entity, tags
@@ -141,13 +142,72 @@ configs/
 └── experiment/baseline.yaml # MVE baseline preset
 ```
 
-### Step 3.1: Run Default Baseline Training (`5` Epochs)
+### Supported Model Architectures
+
+The pipeline natively supports two distinct neural network model families configured via Hydra's `model` configuration group:
+
+| Architecture | Hydra Target | PyTorch Class | Parameters | Typical Test Acc | P95 Latency ($B=1$) | Description |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- |
+| **Convolutional Neural Network** | `model=cnn` *(default)* | [`MNISTConvNet`](../src/mnist_pipeline/model.py) | `421,834` | **`99.04%`** | **`0.41 ms`** | 2-layer CNN (`[32, 64]` channels), $3\times 3$ kernels, ReLU, max pooling, dropout, 128-dim FC hidden layer. |
+| **Vision Transformer** | `model=transformer` | [`MNISTViT`](../src/mnist_pipeline/model.py) | `540,170` | **`95.70%`** | **`0.90 ms`** | Pure ViT with $4\times 4$ patch projection (49 sequence tokens), learnable `[CLS]` token, 1D positional embeddings, 4 Transformer encoder blocks (4 heads, 128 embed dim, 2.0 MLP ratio), LayerNorm. |
+
+#### Artifact Path Isolation Policy
+
+To support running and comparing both architectures without mixing or overwriting outputs, all output paths dynamically interpolate the selected architecture:
+- `artifacts/cnn/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
+- `artifacts/transformer/`: `checkpoints/`, `evaluation/`, `benchmarks/`, `reports/`
+
+---
+
+### Step 3.1: Train Either Model Architecture
+
+**Option A: Train the Baseline CNN (`MNISTConvNet`)**:
 
 ```bash
+# Default training (5 epochs, Adam, lr=1e-3)
 make train
+
+# Explicit Hydra override equivalent:
+make train ARGS="model=cnn"
+# or
+python scripts/train.py model=cnn
 ```
 
-### Step 3.2: Override Hyperparameters from the Command Line
+**Option B: Train the Vision Transformer (`MNISTViT`)**:
+
+```bash
+# Train Vision Transformer with default preset
+make train ARGS="model=transformer"
+
+# Or train with custom epochs and learning rate
+make train ARGS="model=transformer train.epochs=15 train.lr=0.0005"
+# or
+python scripts/train.py model=transformer train.epochs=15 train.lr=0.0005
+```
+
+---
+
+### Step 3.2: Evaluate, Benchmark & Compare Both Models
+
+```bash
+# 1. Evaluate and benchmark the CNN model
+make evaluate ARGS="model=cnn"
+make benchmark ARGS="model=cnn"
+
+# 2. Evaluate and benchmark the Vision Transformer model
+make evaluate ARGS="model=transformer"
+make benchmark ARGS="model=transformer"
+
+# 3. Generate consolidated head-to-head comparison report & plots
+make compare-models
+```
+
+This updates [`docs/experiments/cnn_vs_transformer_study.md`](experiments/cnn_vs_transformer_study.md) and creates diagnostic comparison figures under `docs/experiments/plots/` (Accuracy vs. Latency Pareto curve, latency/throughput batch scaling, and per-class F1-score radar/bar charts).
+
+---
+
+### Step 3.3: Override Hyperparameters from the Command Line
+
 
 Use `ARGS="..."` with `make train` or invoke `scripts/train.py` directly:
 
