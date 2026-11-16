@@ -7,3 +7,4 @@ kernel_size: ${param:model.kernel_size, 3}
 dropout: ${param:model.dropout, 0.25}
 hidden_dim: ${param:model.hidden_dim, 128}
 num_classes: ${param:model.num_classes, 10}
+hf_repo_id: chrisjcc/mnist-cnn

@@ -47,7 +47,11 @@ model-index:
 
 ## 1. Model Details
 
+{% if model_cfg.architecture in ["transformer", "vit"] -%}
+- **Model Architecture**: `MNISTViT` (Vision Transformer: patch size {{ model_cfg.patch_size }}x{{ model_cfg.patch_size }}, {{ model_cfg.depth }} encoder layers, {{ model_cfg.num_heads }} attention heads, embed_dim {{ model_cfg.embed_dim }})
+{% else -%}
 - **Model Architecture**: `MNISTConvNet` (2-Block BatchNorm Convolutional Neural Network with Dropout Classifier Head)
+{% endif -%}
 - **Framework**: PyTorch (`{{ env_meta.torch_version | default("2.x") }}`) + `safetensors`
 - **Trainable Parameters**: `{{ "{:,}".format(benchmark_metrics.trainable_params) }}` (`{{ "%.2f"|format(benchmark_metrics.checkpoint_size_mb) }} MB` full checkpoint / `{{ "%.2f"|format(benchmark_metrics.safetensors_size_mb or benchmark_metrics.checkpoint_size_mb) }} MB` SafeTensors weights)
 - **Input Contract**: `(B, {{ model_cfg.in_channels }}, 28, 28)` float32 tensor normalized with $\mu = {{ data_cfg.mean }}$, $\sigma = {{ data_cfg.std }}$
@@ -55,14 +59,33 @@ model-index:
 - **Repository & Pipeline**: Reproducible DVC + Hydra + Weights & Biases pipeline (`seed = {{ seed }}`)
 - **License**: MIT
 
+{% if model_cfg.architecture in ["transformer", "vit"] -%}
+> [!NOTE]
+> Sibling CNN-based model card: [`chrisjcc/mnist-cnn`](https://huggingface.co/chrisjcc/mnist-cnn). Both models are available for comparative inference in the [Streamlit demo space](https://huggingface.co/spaces/chrisjcc/mnist-lab).
+{% else -%}
+> [!NOTE]
+> Sibling Vision Transformer (ViT) model card: [`chrisjcc/mnist-vit`](https://huggingface.co/chrisjcc/mnist-vit). Both models are available for comparative inference in the [Streamlit demo space](https://huggingface.co/spaces/chrisjcc/mnist-lab).
+{% endif -%}
+
 ### Layer-by-Layer Architecture
 
+{% if model_cfg.architecture in ["transformer", "vit"] -%}
+| Stage | Layer Composition | Output Shape |
+| :--- | :--- | :--- |
+| **Input** | Normalized Grayscale Digit Image | `(B, 1, 28, 28)` |
+| **Patch Extraction** | Non-overlapping {{ model_cfg.patch_size }}x{{ model_cfg.patch_size }} Patches ($N = (28/{{ model_cfg.patch_size }})^2 = {{ (28 // model_cfg.patch_size)**2 }}$) | `(B, {{ (28 // model_cfg.patch_size)**2 }}, {{ model_cfg.patch_size * model_cfg.patch_size }})` |
+| **Linear Projection** | `Linear({{ model_cfg.patch_size * model_cfg.patch_size }} -> {{ model_cfg.embed_dim }})` + Learnable `[CLS]` Token | `(B, {{ (28 // model_cfg.patch_size)**2 + 1 }}, {{ model_cfg.embed_dim }})` |
+| **Position Embedding** | 1D Learnable Positional Embeddings + `Dropout(p={{ model_cfg.dropout }})` | `(B, {{ (28 // model_cfg.patch_size)**2 + 1 }}, {{ model_cfg.embed_dim }})` |
+| **Transformer Encoder** | `{{ model_cfg.depth }}` x Transformer Blocks (`LayerNorm` -> `MultiheadAttention({{ model_cfg.num_heads }} heads)` -> `LayerNorm` -> `MLP(dim={{ (model_cfg.embed_dim * model_cfg.mlp_ratio)|int }})`) | `(B, {{ (28 // model_cfg.patch_size)**2 + 1 }}, {{ model_cfg.embed_dim }})` |
+| **Classifier Head** | `LayerNorm` -> Extract `[CLS]` Token -> `Linear({{ model_cfg.embed_dim }} -> {{ model_cfg.num_classes }})` | `(B, {{ model_cfg.num_classes }})` |
+{% else -%}
 | Stage | Layer Composition | Output Shape |
 | :--- | :--- | :--- |
 | **Input** | Normalized Grayscale Digit Image | `(B, 1, 28, 28)` |
 | **Conv Block 1** | `Conv2d(1 -> {{ model_cfg.conv_channels[0] }}, 3x3, pad=1)` -> `BatchNorm2d` -> `ReLU` -> `MaxPool2d(2x2)` | `(B, {{ model_cfg.conv_channels[0] }}, 14, 14)` |
 | **Conv Block 2** | `Conv2d({{ model_cfg.conv_channels[0] }} -> {{ model_cfg.conv_channels[1] }}, 3x3, pad=1)` -> `BatchNorm2d` -> `ReLU` -> `MaxPool2d(2x2)` | `(B, {{ model_cfg.conv_channels[1] }}, 7, 7)` |
 | **Classifier Head** | `Flatten` -> `Dropout(p={{ model_cfg.dropout }})` -> `Linear({{ model_cfg.conv_channels[1] * 49 }} -> {{ model_cfg.hidden_dim }})` -> `ReLU` -> `Dropout(p={{ model_cfg.dropout }})` -> `Linear({{ model_cfg.hidden_dim }} -> {{ model_cfg.num_classes }})` | `(B, {{ model_cfg.num_classes }})` |
+{% endif -%}
 
 ---
 
@@ -129,15 +152,14 @@ Measured over `{{ benchmark_metrics.timed_runs }}` timed forward passes followin
 
 ```python
 from PIL import Image
-from mnist_pipeline.inference import load_inference_model, predict_digit, preprocess_pil_image
+from mnist_pipeline.inference import load_inference_model, predict_pil_image
 
 # Download from Hugging Face Hub (or load from local fallback checkpoint)
-model = load_inference_model("{{ hf_model_repo_id }}", device="cpu")
+model, source = load_inference_model("{{ hf_model_repo_id }}", device="cpu")
 
 # Load any handwritten digit image
 image = Image.open("digit_sample.png")
-tensor = preprocess_pil_image(image, invert=False)
-result = predict_digit(model, tensor, device="cpu")
+result = predict_pil_image(model, image, device="cpu")
 
 print(f"Predicted Digit: {result.predicted_digit} (Confidence: {result.confidence:.2%})")
 ```
