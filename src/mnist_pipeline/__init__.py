@@ -4,4 +4,6 @@ from __future__ import annotations
 
 __version__ = "0.1.0"
 
-__all__ = ["__version__"]
+from mnist_pipeline.inference import preprocess_canvas_for_mnist
+
+__all__ = ["__version__", "preprocess_canvas_for_mnist"]

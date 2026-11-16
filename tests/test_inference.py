@@ -37,7 +37,7 @@ def test_preprocess_pil_image_rgb_and_inversion() -> None:
     assert torch.isfinite(tensor).all()
     assert display_img.shape == (28, 28)
     # Center of image should have positive foreground intensity after auto-invert
-    assert float(display_img[10:18, 10:18].max()) > 0.5
+    assert float(np.max(display_img[10:18, 10:18])) > 0.5
 
 
 def test_predict_pil_image_and_load_inference_model(tmp_path: Path) -> None:
@@ -81,3 +81,44 @@ def test_predict_tensor_invalid_shape_raises() -> None:
     bad_tensor = torch.zeros(1, 1, 16, 16)
     with pytest.raises(ValueError, match="Expected image_tensor shape"):
         predict_tensor(model, bad_tensor)
+
+
+def test_preprocess_canvas_for_mnist() -> None:
+    """Verify canonical MNIST bounding box crop, 20x20 scale, and Center-of-Mass alignment."""
+    from mnist_pipeline.inference import preprocess_canvas_for_mnist
+
+    # 1. Off-center drawing in top-left of a 280x280 canvas
+    arr = np.zeros((280, 280, 4), dtype=np.uint8)
+    arr[20:40, 20:180, :3] = 255
+    arr[40:180, 140:160, :3] = 255
+    arr[:, :, 3] = 255
+
+    res = preprocess_canvas_for_mnist(arr)
+    assert res.shape == (1, 1, 28, 28)
+    assert res.dtype == np.float32
+    assert np.isfinite(res).all()
+
+    # Reconstruct unnormalized intensities to compute center of mass
+    unnorm = np.clip(res[0, 0] * 0.3081 + 0.1307, 0.0, 1.0)
+    assert float(np.max(unnorm)) > 0.8
+    total_mass = float(unnorm.sum())
+    assert total_mass > 0.0
+    grid_y, grid_x = np.indices((28, 28))
+    com_y = float((grid_y * unnorm).sum() / total_mass)
+    com_x = float((grid_x * unnorm).sum() / total_mass)
+    # Centered near (13.5, 13.5) despite being drawn in the top-left
+    assert abs(com_y - 13.5) <= 1.5
+    assert abs(com_x - 13.5) <= 1.5
+
+    # 2. Blank canvas returns zeros
+    blank = np.zeros((100, 100, 4), dtype=np.uint8)
+    res_blank = preprocess_canvas_for_mnist(blank)
+    assert res_blank.shape == (1, 1, 28, 28)
+    assert (res_blank == 0.0).all()
+
+    # 3. Transparent RGBA canvas with stroke in alpha channel
+    alpha_arr = np.zeros((120, 120, 4), dtype=np.uint8)
+    alpha_arr[30:90, 50:70, 3] = 255
+    res_alpha = preprocess_canvas_for_mnist(alpha_arr)
+    assert res_alpha.shape == (1, 1, 28, 28)
+    assert float(np.max(res_alpha)) > 0.0

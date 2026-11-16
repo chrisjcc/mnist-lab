@@ -71,6 +71,23 @@ def test_invalid_config_raises_value_error(override: str) -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "overrides_list",
+    [
+        ["data.augmentation.enabled=true", "data.augmentation.degrees=-5"],
+        ["data.augmentation.enabled=true", "data.augmentation.translate=[1.5,0.1]"],
+        ["data.augmentation.enabled=true", "data.augmentation.scale=[1.2,0.8]"],
+    ],
+)
+def test_invalid_augmentation_config_raises(overrides_list: list[str]) -> None:
+    with pytest.raises(ValueError):
+        load_hydra_config(
+            config_dir="configs",
+            config_name="config",
+            overrides=overrides_list,
+        )
+
+
 def test_to_pipeline_config_and_serialization() -> None:
     cfg = PipelineConfig()
     validate_config(cfg)

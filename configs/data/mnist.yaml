@@ -11,3 +11,9 @@ seed: ${param:data.seed, 42}
 allow_synthetic_fallback: false
 num_synthetic_train: 600
 num_synthetic_test: 100
+
+augmentation:
+  enabled: ${param:data.augmentation.enabled, false}
+  degrees: ${param:data.augmentation.degrees, 12.0}
+  translate: ${param:data.augmentation.translate, [0.12, 0.12]}
+  scale: ${param:data.augmentation.scale, [0.85, 1.15]}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -35,6 +36,92 @@ class PredictionResult:
     display_image: np.ndarray[tuple[int, int], np.dtype[np.float32]]
 
 
+def preprocess_canvas_for_mnist(
+    canvas_img: np.ndarray[Any, Any] | Image.Image,
+    mnist_mean: float = 0.1307,
+    mnist_std: float = 0.3081,
+) -> np.ndarray[Any, np.dtype[np.float32]]:
+    """Convert a web canvas drawing into an MNIST-normalized (1, 1, 28, 28) float32 tensor.
+
+    Replicates the canonical NIST -> MNIST geometric normalization pipeline:
+      1. RGBA transparency & polarity resolution (white stroke on black background).
+      2. Threshold background noise (> 25) and crop tight foreground bounding box.
+      3. Aspect-ratio preserving Lanczos resize so longest side is exactly 20 pixels.
+      4. Normalize peak stroke brightness to 255.0 (recovers from downsampling blur).
+      5. Placement inside 28x28 frame and shift Center-of-Mass (intensity centroid) to (13.5, 13.5).
+      6. Standard MNIST z-score normalization ((x / 255.0 - mean) / std).
+
+    Args:
+        canvas_img: Raw canvas input as a numpy array (RGB, RGBA, or uint8) or PIL Image.
+        mnist_mean: Normalization mean (default: 0.1307).
+        mnist_std: Normalization standard deviation (default: 0.3081).
+
+    Returns:
+        Float32 numpy array of shape (1, 1, 28, 28).
+    """
+    pil_img = Image.fromarray(canvas_img) if isinstance(canvas_img, np.ndarray) else canvas_img
+
+    # 1. Handle RGBA transparency or RGB background polarity -> white stroke on black (0..255)
+    if pil_img.mode == "RGBA":
+        arr_rgba = np.asarray(pil_img, dtype=np.float32)
+        # If background is transparent, use alpha channel; otherwise convert RGB
+        if float(np.min(arr_rgba[..., 3])) < 250.0 and float(np.max(arr_rgba[..., :3])) < 10.0:
+            gray = arr_rgba[..., 3]
+        else:
+            bg = Image.new("RGBA", pil_img.size, (255, 255, 255, 255))
+            composited = Image.alpha_composite(bg, pil_img).convert("L")
+            gray = np.asarray(composited, dtype=np.float32)
+            if float(np.median(gray)) > 127.0:  # Black ink on white background -> invert
+                gray = 255.0 - gray
+    else:
+        gray = np.asarray(pil_img.convert("L"), dtype=np.float32)
+        if float(np.median(gray)) > 127.0:
+            gray = 255.0 - gray
+
+    # 2. Threshold background noise and crop tight bounding box
+    mask = gray > 25.0
+    if not bool(np.any(mask)):
+        return np.zeros((1, 1, 28, 28), dtype=np.float32)
+
+    ys, xs = np.where(mask)
+    y_min, y_max = int(np.min(ys)), int(np.max(ys)) + 1
+    x_min, x_max = int(np.min(xs)), int(np.max(xs)) + 1
+    cropped = gray[y_min:y_max, x_min:x_max]
+
+    # 3. Aspect-ratio preserving resize so the longest side is 20 pixels
+    h, w = cropped.shape
+    scale = 20.0 / max(h, w)
+    new_h, new_w = max(1, int(round(h * scale))), max(1, int(round(w * scale)))
+    resized_pil = Image.fromarray(cropped.astype(np.uint8)).resize(
+        (new_w, new_h), resample=Image.Resampling.LANCZOS
+    )
+    resized = np.asarray(resized_pil, dtype=np.float32)
+
+    # Normalize peak stroke brightness to 255 (matches MNIST stroke intensity)
+    max_val = float(np.max(resized))
+    if max_val > 0.0:
+        resized = (resized / max_val) * 255.0
+
+    # 4. Place inside 28x28 frame and shift Center-of-Mass (CoM) to (13.5, 13.5)
+    canvas_28 = np.zeros((28, 28), dtype=np.float32)
+    y0 = (28 - new_h) // 2
+    x0 = (28 - new_w) // 2
+    canvas_28[y0 : y0 + new_h, x0 : x0 + new_w] = resized
+
+    total_mass = float(canvas_28.sum())
+    if total_mass > 0:
+        grid_y, grid_x = np.indices((28, 28))
+        com_y = float((grid_y * canvas_28).sum() / total_mass)
+        com_x = float((grid_x * canvas_28).sum() / total_mass)
+        shift_y = int(round(13.5 - com_y))
+        shift_x = int(round(13.5 - com_x))
+        canvas_28 = np.roll(canvas_28, shift=(shift_y, shift_x), axis=(0, 1))
+
+    # 5. Scale to [0, 1] and apply standard MNIST normalization
+    norm = (canvas_28 / 255.0 - mnist_mean) / mnist_std
+    return norm[None, None, :, :].astype(np.float32)
+
+
 def preprocess_pil_image(
     image: Image.Image,
     invert: bool = False,
@@ -45,8 +132,13 @@ def preprocess_pil_image(
 ) -> tuple[torch.Tensor, np.ndarray[tuple[int, int], np.dtype[np.float32]]]:
     """Convert an arbitrary PIL image into a normalized `(1, 1, 28, 28)` MNIST tensor.
 
-    MNIST digits are white foreground strokes on a black background, centered inside
-    a `20x20` bounding box padded to `28x28`.
+    Replicates the canonical NIST -> MNIST preprocessing pipeline:
+      1. RGBA transparency & polarity resolution (white stroke on black background).
+      2. Tight bounding-box foreground crop.
+      3. Aspect-ratio preserving Lanczos resize to 20x20 box.
+      4. Peak stroke brightness normalization to 255.0.
+      5. Center-of-Mass (CoM) translation onto (13.5, 13.5) in 28x28 frame.
+      6. Standard MNIST z-score normalization ((x / 255.0 - mean) / std).
 
     Args:
         image: Input PIL image (RGB, RGBA, or L).
@@ -54,7 +146,7 @@ def preprocess_pil_image(
         auto_invert: Automatically invert if the border/median background is bright (`> 127`).
         center_crop_foreground: If True and non-zero foreground strokes exist, crop
             around the tight foreground bounding box, resize the longest side to 20px,
-            and center-pad into a `28x28` canvas matching canonical MNIST formatting.
+            and center-pad into a `28x28` canvas with Center-of-Mass alignment.
         mean: Normalization mean.
         std: Normalization standard deviation.
 
@@ -65,46 +157,67 @@ def preprocess_pil_image(
     """
     # Handle RGBA transparency by compositing onto a black or white background
     if image.mode == "RGBA":
-        arr_rgba = np.asarray(image, dtype=np.uint8)
-        alpha = arr_rgba[:, :, 3:4].astype(np.float32) / 255.0
-        rgb = arr_rgba[:, :, :3].astype(np.float32)
-        # Estimate whether RGB strokes are dark on transparent or white on dark
-        gray_est = rgb.mean(axis=2, keepdims=True)
-        bg_val = 255.0 if (invert or (auto_invert and float(gray_est.mean()) < 128.0)) else 0.0
-        composited = rgb * alpha + bg_val * (1.0 - alpha)
-        gray_img = Image.fromarray(composited.astype(np.uint8)).convert("L")
+        arr_rgba = np.asarray(image, dtype=np.float32)
+        if float(np.min(arr_rgba[..., 3])) < 250.0 and float(np.max(arr_rgba[..., :3])) < 10.0:
+            gray = arr_rgba[..., 3]
+        else:
+            bg_val = (
+                0
+                if (not invert and (not auto_invert or float(arr_rgba[..., :3].mean()) >= 128.0))
+                else 255
+            )
+            bg = Image.new("RGBA", image.size, (bg_val, bg_val, bg_val, 255))
+            composited = Image.alpha_composite(bg, image).convert("L")
+            gray = np.asarray(composited, dtype=np.float32)
+            if invert or (auto_invert and float(np.median(gray)) > 127.0):
+                gray = 255.0 - gray
     else:
-        gray_img = image.convert("L")
-
-    gray_np = np.asarray(gray_img, dtype=np.uint8)
-    if invert or (auto_invert and float(np.median(gray_np)) > 127.0):
-        gray_img = ImageOps.invert(gray_img)
-        gray_np = np.asarray(gray_img, dtype=np.uint8)
+        gray = np.asarray(image.convert("L"), dtype=np.float32)
+        if invert or (auto_invert and float(np.median(gray)) > 127.0):
+            gray = 255.0 - gray
 
     if center_crop_foreground:
-        # Locate foreground pixels above noise threshold
-        ys, xs = np.where(gray_np > 25)
-        if len(xs) > 0 and len(ys) > 0:
-            x0, x1 = int(np.min(xs)), int(np.max(xs)) + 1
-            y0, y1 = int(np.min(ys)), int(np.max(ys)) + 1
-            cropped = gray_img.crop((x0, y0, x1, y1))
-            w, h = cropped.size
-            max_side = max(w, h, 1)
-            new_w = max(1, int(round(w * 20.0 / max_side)))
-            new_h = max(1, int(round(h * 20.0 / max_side)))
-            resized = cropped.resize((new_w, new_h), Image.Resampling.BILINEAR)
-            canvas = Image.new("L", (28, 28), color=0)
-            paste_x = (28 - new_w) // 2
-            paste_y = (28 - new_h) // 2
-            canvas.paste(resized, (paste_x, paste_y))
-            gray_img = canvas
-        else:
-            gray_img = gray_img.resize((28, 28), Image.Resampling.BILINEAR)
-    else:
-        gray_img = gray_img.resize((28, 28), Image.Resampling.BILINEAR)
+        mask = gray > 25.0
+        if bool(np.any(mask)):
+            ys, xs = np.where(mask)
+            y_min, y_max = int(np.min(ys)), int(np.max(ys)) + 1
+            x_min, x_max = int(np.min(xs)), int(np.max(xs)) + 1
+            cropped = gray[y_min:y_max, x_min:x_max]
+            h, w = cropped.shape
+            scale = 20.0 / max(h, w)
+            new_h = max(1, int(round(h * scale)))
+            new_w = max(1, int(round(w * scale)))
+            resized_pil = Image.fromarray(cropped.astype(np.uint8)).resize(
+                (new_w, new_h), resample=Image.Resampling.LANCZOS
+            )
+            resized = np.asarray(resized_pil, dtype=np.float32)
+            max_val = float(np.max(resized))
+            if max_val > 0.0:
+                resized = (resized / max_val) * 255.0
 
-    unit_np: np.ndarray[tuple[int, int], np.dtype[np.float32]] = (
-        np.asarray(gray_img, dtype=np.float32) / 255.0
+            canvas_28 = np.zeros((28, 28), dtype=np.float32)
+            y0 = (28 - new_h) // 2
+            x0 = (28 - new_w) // 2
+            canvas_28[y0 : y0 + new_h, x0 : x0 + new_w] = resized
+
+            total_mass = float(canvas_28.sum())
+            if total_mass > 0:
+                grid_y, grid_x = np.indices((28, 28))
+                com_y = float((grid_y * canvas_28).sum() / total_mass)
+                com_x = float((grid_x * canvas_28).sum() / total_mass)
+                shift_y = int(round(13.5 - com_y))
+                shift_x = int(round(13.5 - com_x))
+                canvas_28 = np.roll(canvas_28, shift=(shift_y, shift_x), axis=(0, 1))
+        else:
+            canvas_28 = np.zeros((28, 28), dtype=np.float32)
+    else:
+        resized_pil = Image.fromarray(gray.astype(np.uint8)).resize(
+            (28, 28), resample=Image.Resampling.LANCZOS
+        )
+        canvas_28 = np.asarray(resized_pil, dtype=np.float32)
+
+    unit_np: np.ndarray[tuple[int, int], np.dtype[np.float32]] = (canvas_28 / 255.0).astype(
+        np.float32
     )
     norm_np = (unit_np - float(mean)) / float(std)
     tensor = torch.from_numpy(norm_np).to(torch.float32).unsqueeze(0).unsqueeze(0)

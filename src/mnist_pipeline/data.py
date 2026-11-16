@@ -11,8 +11,9 @@ from typing import Any
 
 import numpy as np
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, Dataset, TensorDataset
 from torchvision import datasets
+from torchvision.transforms import RandomAffine
 
 from mnist_pipeline.config import DataConfig, PipelineConfig
 from mnist_pipeline.utils import save_json
@@ -449,6 +450,39 @@ def load_processed_split(
     return images, labels
 
 
+class AugmentedTensorDataset(Dataset[tuple[torch.Tensor, torch.Tensor]]):
+    """Dataset wrapper applying on-the-fly torchvision data augmentation to training images."""
+
+    def __init__(
+        self,
+        images: torch.Tensor,
+        labels: torch.Tensor,
+        transform: Any | None = None,
+    ) -> None:
+        """Initialize the augmented dataset with underlying tensors and optional transform.
+
+        Args:
+            images: Float32 image tensor of shape [N, 1, 28, 28].
+            labels: Int64 label tensor of shape [N].
+            transform: Optional torchvision transform to apply per sample.
+        """
+        self.images = images
+        self.labels = labels
+        self.transform = transform
+
+    def __len__(self) -> int:
+        """Return the total number of samples in the dataset."""
+        return int(self.images.shape[0])
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Fetch a single sample and apply on-the-fly augmentation transform if configured."""
+        img = self.images[idx]
+        lbl = self.labels[idx]
+        if self.transform is not None:
+            img = self.transform(img)
+        return img, lbl
+
+
 def build_dataloaders(
     cfg: PipelineConfig,
     device: torch.device | None = None,
@@ -456,6 +490,8 @@ def build_dataloaders(
     """Build deterministic train, validation, and test DataLoaders from processed splits.
 
     Automatically triggers `preprocess_mnist_data` if the processed files do not yet exist.
+    If `cfg.data.augmentation.enabled` is True, wraps the training partition in an
+    `AugmentedTensorDataset` with `RandomAffine` transforms applied on the fly.
 
     Args:
         cfg: Full PipelineConfig object.
@@ -472,7 +508,25 @@ def build_dataloaders(
     val_images, val_labels = load_processed_split(processed_dir, "val")
     test_images, test_labels = load_processed_split(processed_dir, "test")
 
-    train_ds = TensorDataset(train_images, train_labels)
+    train_ds: Dataset[tuple[torch.Tensor, ...]]
+    if cfg.data.augmentation.enabled:
+        fill_val = float((0.0 - cfg.data.mean) / cfg.data.std)
+        train_transform = RandomAffine(
+            degrees=float(cfg.data.augmentation.degrees),
+            translate=(
+                float(cfg.data.augmentation.translate[0]),
+                float(cfg.data.augmentation.translate[1]),
+            ),
+            scale=(
+                float(cfg.data.augmentation.scale[0]),
+                float(cfg.data.augmentation.scale[1]),
+            ),
+            fill=fill_val,
+        )
+        train_ds = AugmentedTensorDataset(train_images, train_labels, transform=train_transform)
+    else:
+        train_ds = TensorDataset(train_images, train_labels)
+
     val_ds = TensorDataset(val_images, val_labels)
     test_ds = TensorDataset(test_images, test_labels)
 

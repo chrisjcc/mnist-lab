@@ -111,9 +111,9 @@ def run_app() -> None:
         st.markdown("---")
         st.subheader("Preprocessing Controls")
         center_crop = st.checkbox(
-            "Auto-crop & center digit to 20x20 box",
+            "MNIST Normalization (Crop → 20x20 → Center-of-Mass)",
             value=True,
-            help="Matches canonical MNIST preprocessing by centering foreground strokes inside a 20x20 bounding box padded to 28x28.",
+            help="Applies canonical NIST/MNIST pipeline: tight bounding-box crop, aspect-preserving 20x20 Lanczos resize, peak brightness scaling, and Center-of-Mass alignment onto (13.5, 13.5).",
         )
 
     tab_draw, tab_upload, tab_sample = st.tabs(

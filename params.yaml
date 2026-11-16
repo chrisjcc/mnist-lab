@@ -10,6 +10,11 @@ data:
   std: 0.3081
   batch_size: 128
   seed: 42
+  augmentation:
+    enabled: false
+    degrees: 12.0
+    translate: [0.12, 0.12]
+    scale: [0.85, 1.15]
 
 model:
   in_channels: 1
