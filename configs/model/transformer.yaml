@@ -11,3 +11,4 @@ num_heads: 4
 mlp_ratio: 2.0
 dropout: 0.1
 attention_dropout: 0.0
+hf_repo_id: chrisjcc/mnist-vit

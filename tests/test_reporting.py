@@ -79,3 +79,59 @@ def test_end_to_end_eval_benchmark_and_reporting(tmp_path: Path) -> None:
     dataset_card_text = (docs_dir / "dataset_card.md").read_text(encoding="utf-8")
     assert "MNISTConvNet" in model_card_text
     assert "stratified_train_val_split" in dataset_card_text
+
+
+def test_vit_model_card_rendering(tmp_path: Path) -> None:
+    """Verify render_model_card correctly outputs ViT architecture, specs, and CNN cross-link."""
+    from mnist_pipeline.reporting import render_model_card
+
+    repo_root = Path(__file__).resolve().parent.parent
+    cfg = load_hydra_config(overrides=["model=transformer"])
+
+    test_metrics = {
+        "test_acc": 0.985,
+        "test_loss": 0.05,
+        "macro_f1": 0.984,
+        "macro_precision": 0.985,
+        "macro_recall": 0.984,
+        "weighted_f1": 0.985,
+        "num_samples": 10000,
+        "per_class": {
+            str(i): {"precision": 0.98, "recall": 0.98, "f1": 0.98, "support": 1000}
+            for i in range(10)
+        },
+    }
+    benchmark_metrics = {
+        "trainable_params": 318000,
+        "checkpoint_size_mb": 1.25,
+        "safetensors_size_mb": 1.22,
+        "device": "cpu",
+        "timed_runs": 10,
+        "warmup_runs": 2,
+        "batch_metrics": {
+            "1": {
+                "mean_ms": 1.5,
+                "std_ms": 0.1,
+                "p50_ms": 1.4,
+                "p95_ms": 1.6,
+                "p99_ms": 1.7,
+                "samples_per_sec": 650.0,
+            }
+        },
+    }
+    out_path = tmp_path / "vit_model_card.md"
+    rendered_path = render_model_card(
+        cfg=cfg,
+        test_metrics=test_metrics,
+        benchmark_metrics=benchmark_metrics,
+        env_meta={"torch_version": "2.5.1"},
+        template_path=repo_root / "templates" / "model_card_template.md",
+        output_path=out_path,
+    )
+    assert rendered_path.exists()
+    content = rendered_path.read_text(encoding="utf-8")
+    assert "MNISTViT" in content
+    assert "Vision Transformer" in content
+    assert "patch size 4x4" in content
+    assert "chrisjcc/mnist-vit" in content
+    assert "chrisjcc/mnist-cnn" in content  # Sibling model card cross-link

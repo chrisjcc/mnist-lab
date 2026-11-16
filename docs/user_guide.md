@@ -472,11 +472,18 @@ parameters:
 
 #### 2. Launching a Sweep
 
+The repository provides Bayesian sweep definitions for both architectures under [`sweeps/`](../sweeps/):
+- **CNN Sweep**: [`sweeps/cnn_bayes.yaml`](../sweeps/cnn_bayes.yaml) (searches learning rate, weight decay, optimizer, batch size, and dropout).
+- **Vision Transformer Sweep**: [`sweeps/transformer_bayes.yaml`](../sweeps/transformer_bayes.yaml) (searches attention depth, self-attention heads, embedding dimensions, MLP expansion ratio, learning rate, and attention dropout).
+
 ```bash
-# Initialize and execute 5 Bayesian sweep trials
+# 1. Initialize and execute 5 Bayesian sweep trials for CNN (default)
 make sweep COUNT=5
 
-# Or run a fast local 1-epoch sweep trial smoke check (< 1s)
+# 2. Initialize and execute 5 Bayesian sweep trials for Vision Transformer (ViT)
+make sweep SWEEP_CONFIG=sweeps/transformer_bayes.yaml COUNT=5
+
+# 3. Fast local 1-epoch sweep trial smoke check (< 1s)
 make sweep-smoke
 ```
 
@@ -649,12 +656,16 @@ make dvc-repro
 
 ## 7. Downloading the Trained Model from Hugging Face Hub and Running Inference
 
-The inference module (`src/mnist_pipeline/inference.py`) downloads `model.safetensors` and `config.json` from Hugging Face Hub (or falls back to your local `artifacts/checkpoints/` directory when offline).
+The inference module (`src/mnist_pipeline/inference.py`) downloads `model.safetensors` and `config.json` from Hugging Face Hub (or falls back to your local `artifacts/models/mnist_*` directory when running offline). It automatically detects whether the target repository is a Convolutional Neural Network (`MNISTConvNet`) or a Vision Transformer (`MNISTViT`).
 
 ### Step 7.1: Run CLI Inference on a Held-Out Test Sample
 
 ```bash
+# Inference with default CNN (chrisjcc/mnist-cnn)
 make hf-infer ARGS="hf.sample_index=7"
+
+# Inference with Vision Transformer (chrisjcc/mnist-vit)
+make hf-infer ARGS="model=transformer hf.sample_index=7"
 ```
 
 ### Step 7.2: Run CLI Inference on a Custom Image File
@@ -669,11 +680,17 @@ make hf-infer ARGS="hf.image_path=path/to/handwritten_digit.png"
 from PIL import Image
 from mnist_pipeline.inference import load_inference_model, predict_pil_image
 
-model, source = load_inference_model("chrisjcc/mnist-cnn", device="cpu")
-image = Image.open("my_digit.png")
-result = predict_pil_image(model, image, auto_invert=True)
+# 1. Load Convolutional Neural Network (CNN)
+cnn_model, cnn_source = load_inference_model("chrisjcc/mnist-cnn", device="cpu")
 
-print(f"Source: {source}")
+# 2. Load Vision Transformer (ViT)
+vit_model, vit_source = load_inference_model("chrisjcc/mnist-vit", device="cpu")
+
+# Run inference on any handwritten digit image
+image = Image.open("my_digit.png")
+result = predict_pil_image(cnn_model, image, auto_invert=True)
+
+print(f"Source: {cnn_source}")
 print(f"Predicted Digit: {result.predicted_digit} ({result.confidence:.2%})")
 print("Class Probabilities:", result.probabilities)
 ```
@@ -682,18 +699,56 @@ print("Class Probabilities:", result.probabilities)
 
 ## 8. Uploading the Model, Model Card, and Artifacts to Hugging Face Hub
 
+The pipeline supports publishing both **CNN** (`chrisjcc/mnist-cnn`) and **Vision Transformer** (`chrisjcc/mnist-vit`) architectures to dedicated model repositories on Hugging Face Hub. Each repository maintains its own weights (`model.safetensors`), Hydra metadata (`config.json`), and architecture-specific Model Card (`README.md`).
+
+### Publishing Architecture & Workflow
+
+```mermaid
+flowchart TD
+    subgraph Pipeline["Unified ML Pipeline (SSoT / Hydra / DVC)"]
+        CNN_CFG["configs/model/cnn.yaml<br/>(hf_repo_id: chrisjcc/mnist-cnn)"]
+        VIT_CFG["configs/model/transformer.yaml<br/>(hf_repo_id: chrisjcc/mnist-vit)"]
+        HF_CFG["configs/hf/default.yaml<br/>repo_id: ${oc.select:model.hf_repo_id,...}"]
+    end
+
+    subgraph CLI["CLI & Makefile Targets"]
+        PUB_CNN["make publish-hf-cards<br/>or make publish-hf-release"]
+        PUB_VIT["make publish-hf-cards ARGS='model=transformer'<br/>or make publish-hf-release ARGS='model=transformer'"]
+    end
+
+    subgraph Hub["Hugging Face Hub"]
+        REPO_CNN["chrisjcc/mnist-cnn<br/>- model.safetensors<br/>- config.json<br/>- README.md (CNN Card)"]
+        REPO_VIT["chrisjcc/mnist-vit<br/>- model.safetensors<br/>- config.json<br/>- README.md (ViT Card)"]
+    end
+
+    CNN_CFG --> HF_CFG
+    VIT_CFG --> HF_CFG
+    PUB_CNN --> REPO_CNN
+    PUB_VIT --> REPO_VIT
+```
+
 ### Step 8.1: Dry-Run Staging (No Network Calls Required)
 
 Verify that all release files (`model.safetensors`, `config.json`, `checkpoint_best.pt`, `README.md`, `test_metrics.json`, `benchmark_metrics.json`, and `plots/*.png`) stage cleanly:
 
 ```bash
+# CNN release dry-run
 make hf-upload ARGS="hf.dry_run=true"
+
+# ViT release dry-run
+make hf-upload ARGS="model=transformer hf.dry_run=true"
 ```
 
-### Step 8.2: Render Cards Only
+### Step 8.2: Render Cards Locally
+
+Render architecture-specific Model and Dataset Cards locally without making Hub API calls:
 
 ```bash
+# Render CNN model card (docs/model_card.md)
 make hf-card
+
+# Render Vision Transformer model card (docs/model_card.md)
+make hf-card ARGS="model=transformer"
 ```
 
 ### Step 8.3: Publish Model & Dataset Cards to Hugging Face Hub
@@ -702,23 +757,56 @@ Ensure `HF_TOKEN` is exported in your environment with write permissions:
 
 ```bash
 export HF_TOKEN="hf_your_write_token"
-make hf-upload ARGS="hf.repo_id=your-username/mnist-cnn hf.dataset_repo_id=your-username/mnist-dataset hf.dry_run=false"
-```
 
-Or use the release helper script:
+# 1. Publish CNN release to chrisjcc/mnist-cnn
+make publish-hf-release
 
-```bash
-make hf-release
+# 2. Publish Vision Transformer release to chrisjcc/mnist-vit
+make publish-hf-release ARGS="model=transformer"
 ```
 
 ---
 
 ## 9. Building and Deploying the Streamlit Demo as a Hugging Face Docker Space
 
-The interactive Streamlit application (`app/app.py`) lets users:
-1. **Draw a digit (`0`–`9`)** freehand on an HTML5 canvas (`streamlit-drawable-canvas`),
-2. **Upload an image (`PNG`/`JPG`/`JPEG`)** with automatic or manual foreground/background polarity inversion, or
-3. **Explore the Held-Out Test Set Gallery**, viewing the normalized `28 × 28` input tensor, top predicted digit, confidence, and 10-class probability bar chart.
+The interactive Streamlit application (`app/app.py`) provides a multi-model evaluation dashboard where end users can interactively benchmark both the **Convolutional Neural Network (`MNISTConvNet`)** and the **Vision Transformer (`MNISTViT`)**.
+
+### Multi-Model Space Architecture
+
+```mermaid
+flowchart TD
+    subgraph Space["Hugging Face Space (Docker Container: app/app.py)"]
+        UI["Streamlit UI with Multi-Model Dropdown"]
+        CACHE["Streamlit Resource Cache (@st.cache_resource)"]
+        CNN_MEM["In-Memory MNISTConvNet (CNN)<br/>~421k params"]
+        VIT_MEM["In-Memory MNISTViT (Transformer)<br/>~318k params"]
+        
+        UI -->|Selects Model| CACHE
+        CACHE -->|Loads / Caches| CNN_MEM
+        CACHE -->|Loads / Caches| VIT_MEM
+    end
+
+    subgraph Hub["Hugging Face Model Hub (Sibling Repositories)"]
+        REPO_CNN["chrisjcc/mnist-cnn<br/>- model.safetensors<br/>- config.json<br/>- README.md (CNN Model Card)"]
+        REPO_VIT["chrisjcc/mnist-vit<br/>- model.safetensors<br/>- config.json<br/>- README.md (ViT Model Card)"]
+    end
+
+    CNN_MEM -.->|Download on First Run / Cached| REPO_CNN
+    VIT_MEM -.->|Download on First Run / Cached| REPO_VIT
+```
+
+### Key UI Features
+
+1. **Model Architecture Selector**: A sidebar selectbox allows switching between:
+   - **`CNN (Convolutional)`**: Points to `chrisjcc/mnist-cnn` (421k parameters, 2-block ConvNet + BatchNorm + Dropout).
+   - **`ViT (Vision Transformer)`**: Points to `chrisjcc/mnist-vit` (318k parameters, 4-layer patch Transformer + self-attention).
+   - **`Custom Model / Repo`**: Allows entering any arbitrary Hugging Face repo ID or local checkpoint path.
+2. **In-Memory Caching (`@st.cache_resource`)**: When a user toggles between architectures, the previously loaded weights stay cached in memory, eliminating redundant Hub downloads and re-initialization latency.
+3. **Active Model Badge**: Displays the active architecture name, total trainable parameters, and loaded source provenance.
+4. **Interactive Input Modes**:
+   - **✏️ Draw a Digit**: Freehand HTML5 canvas (`streamlit-drawable-canvas`).
+   - **📤 Upload an Image**: Upload `PNG`/`JPG`/`JPEG` with automatic or manual polarity inversion.
+   - **🧪 Test Set Gallery**: Explore 10,000 canonical MNIST test samples with ground-truth verification.
 
 ### Step 9.1: Run the Streamlit App Locally
 

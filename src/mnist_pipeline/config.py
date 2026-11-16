@@ -248,6 +248,7 @@ class ModelConfig:
     mlp_ratio: float = 2.0
     attention_dropout: float = 0.0
     artifacts_dir: str | None = None
+    hf_repo_id: str | None = None
 
 
 @dataclass

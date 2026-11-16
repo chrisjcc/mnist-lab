@@ -122,3 +122,34 @@ def test_preprocess_canvas_for_mnist() -> None:
     res_alpha = preprocess_canvas_for_mnist(alpha_arr)
     assert res_alpha.shape == (1, 1, 28, 28)
     assert float(np.max(res_alpha)) > 0.0
+
+
+def test_load_inference_model_vit_fallback(tmp_path: Path) -> None:
+    """Verify load_inference_model defaults to MNISTViT when ViT repo is specified without Hub access."""
+    from mnist_pipeline.model import MNISTViT
+
+    nonexistent_ckpt = tmp_path / "nonexistent" / "checkpoint_best.pt"
+    model, source = load_inference_model(
+        repo_id_or_path="chrisjcc/mnist-vit",
+        checkpoint_fallback=nonexistent_ckpt,
+        device="cpu",
+    )
+    assert isinstance(model, MNISTViT)
+    assert source == "untrained_fallback"
+
+
+def test_app_model_presets() -> None:
+    """Verify Streamlit application MODEL_PRESETS catalog contains valid architectures and paths."""
+    from app.app import MODEL_PRESETS
+
+    assert "CNN (Convolutional)" in MODEL_PRESETS
+    assert "ViT (Vision Transformer)" in MODEL_PRESETS
+    assert "Custom Model / Repo" in MODEL_PRESETS
+
+    cnn = MODEL_PRESETS["CNN (Convolutional)"]
+    assert cnn["repo_id"] == "chrisjcc/mnist-cnn"
+    assert "mnist_cnn" in cnn["checkpoint_fallback"]
+
+    vit = MODEL_PRESETS["ViT (Vision Transformer)"]
+    assert vit["repo_id"] == "chrisjcc/mnist-vit"
+    assert "mnist_vit" in vit["checkpoint_fallback"]

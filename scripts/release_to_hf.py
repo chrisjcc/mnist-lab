@@ -51,7 +51,7 @@ def main() -> None:
         default=None,
         help="Optional release version tag for logging provenance.",
     )
-    args = parser.parse_args()
+    args, unknown_args = parser.parse_known_args()
 
     logging.basicConfig(
         level=logging.INFO,
@@ -66,6 +66,7 @@ def main() -> None:
         overrides.append(f"hf.repo_id={args.model_repo}")
     if args.dataset_repo:
         overrides.append(f"hf.dataset_repo_id={args.dataset_repo}")
+    overrides.extend(unknown_args)
 
     cfg = load_hydra_config(config_dir=repo_root / "configs", overrides=overrides)
     outputs = generate_all_reports(

@@ -5,8 +5,8 @@ Supports three input modes:
   2. Handwritten digit image upload (`PNG`, `JPG`, `JPEG`) with polarity controls
   3. Canonical MNIST/synthetic test sample gallery (`0`–`9`)
 
-Loads the trained `MNISTConvNet` from Hugging Face Model Hub (`HF_MODEL_REPO_ID`)
-with automatic fallback to local checkpoints (`artifacts/checkpoints/checkpoint_best.pt`).
+Loads the trained model (`MNISTConvNet` or `MNISTViT`) from Hugging Face Model Hub
+with automatic fallback to local checkpoints (`artifacts/models/mnist_*`).
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 import streamlit as st
+import torch
 from PIL import Image
 
 from mnist_pipeline.data import generate_synthetic_digit_template, load_processed_split
@@ -25,12 +26,37 @@ from mnist_pipeline.inference import (
     predict_pil_image,
     predict_tensor,
 )
-from mnist_pipeline.model import MNISTConvNet
+from mnist_pipeline.model import count_trainable_parameters
+
+MODEL_PRESETS: dict[str, dict[str, str]] = {
+    "CNN (Convolutional)": {
+        "repo_id": "chrisjcc/mnist-cnn",
+        "checkpoint_fallback": str(
+            Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
+        ),
+        "description": "2-block ConvNet + BatchNorm + Dropout (~421k params)",
+        "badge": "Convolutional Neural Network (CNN)",
+    },
+    "ViT (Vision Transformer)": {
+        "repo_id": "chrisjcc/mnist-vit",
+        "checkpoint_fallback": str(
+            Path("artifacts") / "models" / "mnist_vit" / "checkpoints" / "checkpoint_best.pt"
+        ),
+        "description": "Patch-based Vision Transformer + Multi-Head Attention (~318k params)",
+        "badge": "Vision Transformer (ViT)",
+    },
+    "Custom Model / Repo": {
+        "repo_id": "",
+        "checkpoint_fallback": "",
+        "description": "Custom Hugging Face repository ID or local checkpoint path",
+        "badge": "Custom Architecture",
+    },
+}
 
 
-@st.cache_resource(show_spinner="Loading MNISTConvNet model...")
-def get_cached_model(repo_id: str, checkpoint_path: str) -> tuple[MNISTConvNet, str]:
-    """Load and cache the `MNISTConvNet` inference model across Streamlit sessions.
+@st.cache_resource(show_spinner="Loading model...")
+def get_cached_model(repo_id: str, checkpoint_path: str) -> tuple[torch.nn.Module, str]:
+    """Load and cache the inference model across Streamlit sessions.
 
     Args:
         repo_id: Hugging Face Model Hub repository identifier.
@@ -46,11 +72,12 @@ def get_cached_model(repo_id: str, checkpoint_path: str) -> tuple[MNISTConvNet, 
     )
 
 
-def _render_prediction_panel(result: PredictionResult) -> None:
+def _render_prediction_panel(result: PredictionResult, model_name: str | None = None) -> None:
     """Render the `28x28` preprocessed image, top prediction metric, and probability chart.
 
     Args:
-        result: Populated `PredictionResult` from `MNISTConvNet` inference.
+        result: Populated `PredictionResult` from inference.
+        model_name: Optional class name of the active model for UI display.
     """
     col_preview, col_metrics, col_chart = st.columns([1.1, 1.1, 2.2])
 
@@ -64,6 +91,8 @@ def _render_prediction_panel(result: PredictionResult) -> None:
 
     with col_metrics:
         st.subheader("Prediction")
+        if model_name:
+            st.caption(f"**Architecture**: `{model_name}`")
         st.metric(
             label="Predicted Digit",
             value=f"{result.predicted_digit}",
@@ -93,21 +122,56 @@ def run_app() -> None:
 
     st.title("🔢 MNIST Handwritten Digit Classifier")
     st.markdown(
-        "Interactive inference demo powered by **PyTorch (`MNISTConvNet`)**, "
+        "Interactive inference demo powered by **PyTorch (`MNISTConvNet` & `MNISTViT`)**, "
         "**Hydra**, **DVC**, and **Hugging Face Model Hub**."
     )
 
-    default_repo_id = os.environ.get("HF_MODEL_REPO_ID", "chrisjcc/mnist-cnn")
-    cnn_ckpt = Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
-    legacy_ckpt = Path("artifacts") / "checkpoints" / "checkpoint_best.pt"
-    default_candidate = str(cnn_ckpt if cnn_ckpt.exists() else legacy_ckpt)
-    default_ckpt = os.environ.get("MNIST_CHECKPOINT_PATH", default_candidate)
+    env_repo = os.environ.get("HF_MODEL_REPO_ID")
+    default_index = 0
+    if env_repo:
+        if "vit" in env_repo.lower() or "transformer" in env_repo.lower():
+            default_index = 1
+        elif env_repo != "chrisjcc/mnist-cnn":
+            default_index = 2
 
     with st.sidebar:
         st.header("⚙️ Model Configuration")
-        repo_id = st.text_input("Hugging Face Model Repo ID", value=default_repo_id)
-        model, source_desc = get_cached_model(repo_id, default_ckpt)
+        selected_model_type = st.selectbox(
+            "Model Architecture",
+            options=list(MODEL_PRESETS.keys()),
+            index=default_index,
+            help="Select the neural network architecture to run digit classification with.",
+        )
+        preset = MODEL_PRESETS[selected_model_type]
+
+        if selected_model_type == "Custom Model / Repo":
+            repo_id = st.text_input(
+                "Hugging Face Model Repo ID",
+                value=env_repo or "chrisjcc/mnist-cnn",
+            )
+            checkpoint_path = st.text_input(
+                "Local Checkpoint Path (fallback)",
+                value=os.environ.get(
+                    "MNIST_CHECKPOINT_PATH",
+                    str(
+                        Path("artifacts")
+                        / "models"
+                        / "mnist_cnn"
+                        / "checkpoints"
+                        / "checkpoint_best.pt"
+                    ),
+                ),
+            )
+        else:
+            repo_id = env_repo or preset["repo_id"]
+            checkpoint_path = os.environ.get("MNIST_CHECKPOINT_PATH", preset["checkpoint_fallback"])
+            st.caption(f"**Architecture**: {preset['description']}")
+            st.caption(f"**Target Hub Repo**: `{repo_id}`")
+
+        model, source_desc = get_cached_model(repo_id, checkpoint_path)
+        param_count = count_trainable_parameters(model)
         st.success(f"**Loaded Source**: `{source_desc}`")
+        st.info(f"**Active Model**: `{model.__class__.__name__}` ({param_count:,} params)")
 
         st.markdown("---")
         st.subheader("Preprocessing Controls")
@@ -155,7 +219,7 @@ def run_app() -> None:
                         auto_invert=False,
                         center_crop_foreground=center_crop,
                     )
-                    _render_prediction_panel(pred_res)
+                    _render_prediction_panel(pred_res, model_name=model.__class__.__name__)
                 else:
                     st.info("Draw a digit on the canvas above to run real-time inference.")
             else:
@@ -192,7 +256,7 @@ def run_app() -> None:
                 auto_invert=auto_invert,
                 center_crop_foreground=center_crop,
             )
-            _render_prediction_panel(pred_res)
+            _render_prediction_panel(pred_res, model_name=model.__class__.__name__)
 
     with tab_sample:
         processed_test_path = Path("data") / "processed" / "test.pt"
@@ -209,13 +273,13 @@ def run_app() -> None:
             true_digit = int(test_labels[sample_idx].item())
             st.caption(f"**Ground-Truth Test Label**: Digit `{true_digit}`")
             pred_res = predict_tensor(model=model, image_tensor=sample_tensor)
-            _render_prediction_panel(pred_res)
+            _render_prediction_panel(pred_res, model_name=model.__class__.__name__)
         else:
             digit_choice = st.selectbox("Select Canonical Digit Template", list(range(10)), index=3)
             tpl_tensor = generate_synthetic_digit_template(int(digit_choice))
             norm_tensor = ((tpl_tensor - 0.1307) / 0.3081).unsqueeze(0)
             pred_res = predict_tensor(model=model, image_tensor=norm_tensor)
-            _render_prediction_panel(pred_res)
+            _render_prediction_panel(pred_res, model_name=model.__class__.__name__)
 
 
 if __name__ == "__main__":

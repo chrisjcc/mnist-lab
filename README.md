@@ -16,7 +16,7 @@ A reproducible, configuration-driven **MNIST handwritten digit classification pi
 - **Experiment Tracking (`Weights & Biases`)**: Pluggable `ExperimentTracker` supporting `online`, `offline`, and `disabled` modes with automated metric, figure, and checkpoint artifact logging.
 - **Hugging Face Hub Integration**: Automated `safetensors` serialization (`MNISTConvNet.save_pretrained` / `from_pretrained`), Jinja2-rendered Model & Dataset Cards (`docs/model_card.md`, `docs/dataset_card.md`), and CLI upload/inference scripts.
 - **Multi-Architecture Support (CNN vs. Vision Transformer)**: Supports both classical convolution ([`MNISTConvNet`](src/mnist_pipeline/model.py) via `model=cnn`, 421k params, 99.04% acc) and pure attention-based vision models ([`MNISTViT`](src/mnist_pipeline/model.py) via `model=transformer`, 540k params, 95.70% acc) with isolated artifact namespacing (`artifacts/models/mnist_cnn/` vs. `artifacts/models/mnist_vit/`) and automated head-to-head comparison reporting (`make compare-models`).
-- **Interactive Hugging Face Docker Space (`app/`, `Dockerfile`)**: Streamlit web application supporting freehand digit drawing (`streamlit-drawable-canvas`), image uploads with automatic polarity inversion, and live 10-class probability bar charts.
+- **Interactive Multi-Model Hugging Face Docker Space (`app/`, `Dockerfile`)**: Streamlit web application with dynamic architecture selector (`MNISTConvNet` vs. `MNISTViT`), in-memory `@st.cache_resource` caching, active architecture badge, freehand digit drawing (`streamlit-drawable-canvas`), image uploads with automatic polarity inversion, and live 10-class probability distributions.
 
 ---
 

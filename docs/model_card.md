@@ -30,16 +30,16 @@ model-index:
           split: test
         metrics:
           - type: accuracy
-            value: 0.9904
+            value: 0.9874
             name: Test Accuracy
           - type: f1
-            value: 0.9903
+            value: 0.9873
             name: Macro F1
           - type: precision
-            value: 0.9903
+            value: 0.9873
             name: Macro Precision
           - type: recall
-            value: 0.9903
+            value: 0.9873
             name: Macro Recall
 ---
 
@@ -55,6 +55,8 @@ model-index:
 - **Repository & Pipeline**: Reproducible DVC + Hydra + Weights & Biases pipeline (`seed = 42`)
 - **License**: MIT
 
+> [!NOTE]
+> Sibling Vision Transformer (ViT) model card: [`chrisjcc/mnist-vit`](https://huggingface.co/chrisjcc/mnist-vit). Both models are available for comparative inference in the [Streamlit demo space](https://huggingface.co/spaces/chrisjcc/mnist-lab).
 ### Layer-by-Layer Architecture
 
 | Stage | Layer Composition | Output Shape |
@@ -63,7 +65,6 @@ model-index:
 | **Conv Block 1** | `Conv2d(1 -> 32, 3x3, pad=1)` -> `BatchNorm2d` -> `ReLU` -> `MaxPool2d(2x2)` | `(B, 32, 14, 14)` |
 | **Conv Block 2** | `Conv2d(32 -> 64, 3x3, pad=1)` -> `BatchNorm2d` -> `ReLU` -> `MaxPool2d(2x2)` | `(B, 64, 7, 7)` |
 | **Classifier Head** | `Flatten` -> `Dropout(p=0.25)` -> `Linear(3136 -> 128)` -> `ReLU` -> `Dropout(p=0.25)` -> `Linear(128 -> 10)` | `(B, 10)` |
-
 ---
 
 ## 2. Intended Use & Limitations
@@ -96,27 +97,27 @@ model-index:
 
 | Metric | Value |
 | :--- | :--- |
-| **Test Accuracy** | **0.9904 (99.04%)** |
-| **Test Cross-Entropy Loss** | `0.0305` |
-| **Macro Precision** | `0.9903` |
-| **Macro Recall** | `0.9903` |
-| **Macro F1-Score** | `0.9903` |
-| **Weighted F1-Score** | `0.9904` |
+| **Test Accuracy** | **0.9874 (98.74%)** |
+| **Test Cross-Entropy Loss** | `0.0348` |
+| **Macro Precision** | `0.9873` |
+| **Macro Recall** | `0.9873` |
+| **Macro F1-Score** | `0.9873` |
+| **Weighted F1-Score** | `0.9874` |
 
 ### Per-Class Performance (`0`–`9`)
 
 | Digit Class | Precision | Recall | F1-Score | Support |
 | :---: | :---: | :---: | :---: | :---: |
-| **Digit 0** | 0.9919 | 0.9939 | 0.9929 | 980 |
-| **Digit 1** | 0.9956 | 0.9956 | 0.9956 | 1135 |
-| **Digit 2** | 0.9884 | 0.9903 | 0.9894 | 1032 |
-| **Digit 3** | 0.9920 | 0.9881 | 0.9901 | 1010 |
-| **Digit 4** | 0.9929 | 0.9949 | 0.9939 | 982 |
-| **Digit 5** | 0.9855 | 0.9888 | 0.9871 | 892 |
-| **Digit 6** | 0.9875 | 0.9906 | 0.9891 | 958 |
-| **Digit 7** | 0.9874 | 0.9903 | 0.9888 | 1028 |
-| **Digit 8** | 0.9897 | 0.9856 | 0.9877 | 974 |
-| **Digit 9** | 0.9920 | 0.9851 | 0.9886 | 1009 |
+| **Digit 0** | 0.9919 | 0.9949 | 0.9934 | 980 |
+| **Digit 1** | 0.9886 | 0.9965 | 0.9925 | 1135 |
+| **Digit 2** | 0.9864 | 0.9864 | 0.9864 | 1032 |
+| **Digit 3** | 0.9911 | 0.9921 | 0.9916 | 1010 |
+| **Digit 4** | 0.9839 | 0.9939 | 0.9889 | 982 |
+| **Digit 5** | 0.9800 | 0.9910 | 0.9855 | 892 |
+| **Digit 6** | 0.9905 | 0.9802 | 0.9853 | 958 |
+| **Digit 7** | 0.9873 | 0.9815 | 0.9844 | 1028 |
+| **Digit 8** | 0.9867 | 0.9867 | 0.9867 | 974 |
+| **Digit 9** | 0.9869 | 0.9703 | 0.9785 | 1009 |
 
 
 ---
@@ -127,9 +128,9 @@ Measured over `50` timed forward passes following `10` warm-up runs on device `c
 
 | Batch Size | Mean Latency (ms) | Std (ms) | P50 Latency (ms) | P95 Latency (ms) | P99 Latency (ms) | Throughput (samples/sec) |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1** | 0.286 | 0.048 | 0.273 | 0.407 | 0.420 | 3497.8 |
-| **32** | 7.841 | 6.031 | 5.391 | 20.915 | 29.033 | 4081.1 |
-| **128** | 12.433 | 1.446 | 12.002 | 14.891 | 17.489 | 10295.3 |
+| **1** | 0.171 | 0.011 | 0.167 | 0.188 | 0.211 | 5854.9 |
+| **32** | 2.261 | 0.144 | 2.234 | 2.373 | 2.925 | 14151.6 |
+| **128** | 7.283 | 1.165 | 6.794 | 9.078 | 11.678 | 17576.3 |
 
 
 ---
@@ -138,15 +139,14 @@ Measured over `50` timed forward passes following `10` warm-up runs on device `c
 
 ```python
 from PIL import Image
-from mnist_pipeline.inference import load_inference_model, predict_digit, preprocess_pil_image
+from mnist_pipeline.inference import load_inference_model, predict_pil_image
 
 # Download from Hugging Face Hub (or load from local fallback checkpoint)
-model = load_inference_model("chrisjcc/mnist-cnn", device="cpu")
+model, source = load_inference_model("chrisjcc/mnist-cnn", device="cpu")
 
 # Load any handwritten digit image
 image = Image.open("digit_sample.png")
-tensor = preprocess_pil_image(image, invert=False)
-result = predict_digit(model, tensor, device="cpu")
+result = predict_pil_image(model, image, device="cpu")
 
 print(f"Predicted Digit: {result.predicted_digit} (Confidence: {result.confidence:.2%})")
 ```

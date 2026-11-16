@@ -11,7 +11,12 @@ import numpy as np
 import torch
 from PIL import Image
 
-from mnist_pipeline.model import MNISTConvNet, load_checkpoint, load_model_from_pretrained
+from mnist_pipeline.model import (
+    MNISTConvNet,
+    MNISTViT,
+    load_checkpoint,
+    load_model_from_pretrained,
+)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -234,18 +239,18 @@ def load_inference_model(
     cache_dir: str | Path | None = Path("artifacts") / "hf_cache",
     device: str | torch.device = "cpu",
 ) -> tuple[torch.nn.Module, str]:
-    """Load an `MNISTConvNet` for inference with resilient local and Hub fallback.
+    """Load an MNIST model (`MNISTConvNet` or `MNISTViT`) for inference with resilient local and Hub fallback.
 
     Resolution order:
       1. If `repo_id_or_path` is an existing local directory with `model.safetensors`
-         and `config.json`, load via `MNISTConvNet.from_pretrained`.
-      2. If `checkpoint_fallback` exists locally (`artifacts/checkpoints/checkpoint_best.pt`),
+         and `config.json`, load via `load_model_from_pretrained`.
+      2. If `checkpoint_fallback` exists locally (or auto-resolved ViT/CNN sibling path),
          or its parent directory contains `model.safetensors`, load locally when Hub
          download is unavailable or when running offline.
       3. Attempt to download `model.safetensors` + `config.json` from Hugging Face Hub
-         via `MNISTConvNet.from_pretrained(repo_id_or_path, ...)`.
-      4. Fall back to an initialized default `MNISTConvNet` so interactive demos remain
-         functional even in completely clean offline environments.
+         via `load_model_from_pretrained(repo_id_or_path, ...)`.
+      4. Fall back to an initialized default architecture (`MNISTConvNet` or `MNISTViT`)
+         so interactive demos remain functional even in completely clean offline environments.
 
     Args:
         repo_id_or_path: Hugging Face Hub repo ID (`"username/repo"`) or local directory.
@@ -275,10 +280,18 @@ def load_inference_model(
         model.eval()
         return model, f"local_checkpoint:{local_candidate}"
 
+    is_vit = any(k in str(repo_id_or_path).lower() for k in ("vit", "transformer"))
     ckpt_path = Path(checkpoint_fallback)
-    if not ckpt_path.exists() and ckpt_path == (
+    default_cnn_ckpt = (
         Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
-    ):
+    )
+
+    if is_vit and ckpt_path == default_cnn_ckpt:
+        vit_ckpt = Path("artifacts") / "models" / "mnist_vit" / "checkpoints" / "checkpoint_best.pt"
+        if vit_ckpt.exists() or (vit_ckpt.parent / "model.safetensors").exists():
+            ckpt_path = vit_ckpt
+
+    if not ckpt_path.exists() and ckpt_path == default_cnn_ckpt:
         legacy_path = Path("artifacts") / "checkpoints" / "checkpoint_best.pt"
         if legacy_path.exists():
             ckpt_path = legacy_path
@@ -307,13 +320,17 @@ def load_inference_model(
         )
         return model, f"hf_hub:{repo_id_or_path}@{revision}"
     except Exception as exc:
+        arch_name = "MNISTViT" if is_vit else "MNISTConvNet"
         LOGGER.warning(
             "Could not download model from Hugging Face Hub '%s' (%s); "
-            "using freshly initialized MNISTConvNet fallback.",
+            "using freshly initialized %s fallback.",
             repo_id_or_path,
             exc,
+            arch_name,
         )
-        fallback_model = MNISTConvNet().to(device)
+        fallback_model: torch.nn.Module = (
+            MNISTViT().to(device) if is_vit else MNISTConvNet().to(device)
+        )
         fallback_model.eval()
         return fallback_model, "untrained_fallback"
 

@@ -1,4 +1,4 @@
-repo_id: chrisjcc/mnist-cnn
+repo_id: ${oc.select:model.hf_repo_id,chrisjcc/mnist-cnn}
 dataset_repo_id: chrisjcc/mnist-dataset
 revision: main
 private: false

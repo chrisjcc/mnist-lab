@@ -52,6 +52,8 @@ def test_default_hydra_config_loads() -> None:
         cfg.evaluate.checkpoint_file_path
         == Path("artifacts") / "models" / "mnist_cnn" / "checkpoints" / "checkpoint_best.pt"
     )
+    assert cfg.model.hf_repo_id == "chrisjcc/mnist-cnn"
+    assert cfg.hf.repo_id == "chrisjcc/mnist-cnn"
 
 
 def test_hydra_config_overrides() -> None:
@@ -269,6 +271,8 @@ def test_transformer_hydra_config_loads() -> None:
         cfg.evaluate.checkpoint_file_path
         == Path("artifacts") / "models" / "mnist_vit" / "checkpoints" / "checkpoint_best.pt"
     )
+    assert cfg.model.hf_repo_id == "chrisjcc/mnist-vit"
+    assert cfg.hf.repo_id == "chrisjcc/mnist-vit"
 
 
 def test_artifact_path_isolation_interpolation() -> None:

@@ -261,7 +261,7 @@ publish-hf-release:
 	@echo "=========================================================="
 	@echo "Deploying verified MNIST model & cards to Hugging Face Hub"
 	@echo "  Dataset: https://huggingface.co/datasets/$(DATASET_REPO)"
-	@echo "  Model:   https://huggingface.co/$(MODEL_REPO)"
+	@echo "  Model:   $(if $(filter-out chrisjcc/mnist-cnn,$(MODEL_REPO)),https://huggingface.co/$(MODEL_REPO),Auto-resolved via model config / ARGS)"
 	@echo "=========================================================="
 	@test -n "$$HF_TOKEN" || ( \
 		echo "ERROR: HF_TOKEN environment variable is not set."; \
@@ -270,7 +270,7 @@ publish-hf-release:
 	)
 	@RELEASE_TAG=$$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0") && \
 	$(PYTHON) scripts/release_to_hf.py --publish-cards \
-		--model-repo $(MODEL_REPO) \
+		$(if $(filter-out chrisjcc/mnist-cnn,$(MODEL_REPO)),--model-repo $(MODEL_REPO),) \
 		--dataset-repo $(DATASET_REPO) \
 		--release-tag "$$RELEASE_TAG" $(ARGS)
 

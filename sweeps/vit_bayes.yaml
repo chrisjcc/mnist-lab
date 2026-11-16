@@ -1,0 +1,79 @@
+# -----------------------------------------------------------------------------
+# MNIST Vision Transformer (ViT) Hyperparameter Sweep Configuration
+# -----------------------------------------------------------------------------
+# Weights & Biases Bayesian hyperparameter sweep for optimizing MNISTViT.
+
+# --- Sweep Settings ---
+name: mnist-vit-bayes-sweep
+description: >
+  Bayesian hyperparameter optimization for MNIST Vision Transformer (ViT) training.
+  Optimizes architecture depth, self-attention heads, embedding dimensions,
+  learning rate, weight decay, and dropout while maximizing validation accuracy
+  using Hyperband early stopping.
+project: mnist-classification
+program: scripts/run_sweep_trial.py
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args}
+method: bayes
+metric:
+  name: val/accuracy
+  goal: maximize
+
+# Enable Hyperband Early Stopping across epochs
+early_terminate:
+  type: hyperband
+  min_iter: 3
+  eta: 2
+
+# --- Search Space ---
+parameters:
+  model:
+    value: transformer
+  learning_rate:
+    distribution: log_uniform_values
+    min: 0.0001
+    max: 0.003
+  weight_decay:
+    distribution: log_uniform_values
+    min: 0.00001
+    max: 0.01
+  optimizer:
+    values:
+      - adam
+      - adamw
+  dropout:
+    distribution: uniform
+    min: 0.0
+    max: 0.3
+  attention_dropout:
+    distribution: uniform
+    min: 0.0
+    max: 0.2
+  depth:
+    values:
+      - 2
+      - 3
+      - 4
+  num_heads:
+    values:
+      - 2
+      - 4
+  embed_dim:
+    values:
+      - 64
+      - 128
+  mlp_ratio:
+    values:
+      - 1.0
+      - 2.0
+      - 4.0
+  batch_size:
+    values:
+      - 64
+      - 128
+      - 256
+  epochs:
+    value: 5

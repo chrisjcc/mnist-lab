@@ -38,6 +38,19 @@ PARAM_MAPPING: dict[str, str] = {
     "model.dropout": "model.dropout",
     "hidden_dim": "model.hidden_dim",
     "model.hidden_dim": "model.hidden_dim",
+    "model": "model",
+    "patch_size": "model.patch_size",
+    "model.patch_size": "model.patch_size",
+    "embed_dim": "model.embed_dim",
+    "model.embed_dim": "model.embed_dim",
+    "depth": "model.depth",
+    "model.depth": "model.depth",
+    "num_heads": "model.num_heads",
+    "model.num_heads": "model.num_heads",
+    "mlp_ratio": "model.mlp_ratio",
+    "model.mlp_ratio": "model.mlp_ratio",
+    "attention_dropout": "model.attention_dropout",
+    "model.attention_dropout": "model.attention_dropout",
 }
 
 
@@ -63,7 +76,9 @@ def build_hydra_overrides(
         cleaned_key = raw_key.lstrip("-")
         target_key = PARAM_MAPPING.get(cleaned_key, cleaned_key)
         # Only process recognized configuration namespaces
-        if target_key.startswith(("train.", "model.", "data.", "evaluate.", "wandb.", "paths.")):
+        if target_key == "model" or target_key.startswith(
+            ("train.", "model.", "data.", "evaluate.", "wandb.", "paths.")
+        ):
             overrides.append(f"{target_key}={value}")
 
     if smoke:
