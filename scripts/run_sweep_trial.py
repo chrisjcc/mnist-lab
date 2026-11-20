@@ -85,6 +85,7 @@ def build_hydra_overrides(
         overrides.append("train.epochs=1")
         overrides.append("train.max_train_batches=2")
         overrides.append("train.max_val_batches=2")
+        overrides.append("data.allow_synthetic_fallback=true")
 
     if extra_overrides:
         overrides.extend(extra_overrides)

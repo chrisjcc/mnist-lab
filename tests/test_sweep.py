@@ -37,6 +37,7 @@ def test_build_hydra_overrides_smoke_mode() -> None:
     assert "train.epochs=1" in overrides
     assert "train.max_train_batches=2" in overrides
     assert "train.max_val_batches=2" in overrides
+    assert "data.allow_synthetic_fallback=true" in overrides
 
 
 def test_parse_args_converts_numeric_and_extracts_smoke() -> None:
