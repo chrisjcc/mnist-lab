@@ -37,7 +37,7 @@ class PredictionResult:
     confidence: float
     probabilities: dict[str, float]
     preprocessed_tensor: torch.Tensor
-    display_image: np.ndarray[tuple[int, int], np.dtype[np.float32]]
+    display_image: np.ndarray[Any, np.dtype[np.float32]]
 
 
 def preprocess_canvas_for_mnist(
@@ -107,7 +107,7 @@ def preprocess_canvas_for_mnist(
         resized = (resized / max_val) * 255.0
 
     # 4. Place inside 28x28 frame and shift Center-of-Mass (CoM) to (13.5, 13.5)
-    canvas_28 = np.zeros((28, 28), dtype=np.float32)
+    canvas_28: np.ndarray[Any, np.dtype[np.float32]] = np.zeros((28, 28), dtype=np.float32)
     y0 = (28 - new_h) // 2
     x0 = (28 - new_w) // 2
     canvas_28[y0 : y0 + new_h, x0 : x0 + new_w] = resized
@@ -133,7 +133,7 @@ def preprocess_pil_image(
     center_crop_foreground: bool = True,
     mean: float = 0.1307,
     std: float = 0.3081,
-) -> tuple[torch.Tensor, np.ndarray[tuple[int, int], np.dtype[np.float32]]]:
+) -> tuple[torch.Tensor, np.ndarray[Any, np.dtype[np.float32]]]:
     """Convert an arbitrary PIL image into a normalized `(1, 1, 28, 28)` MNIST tensor.
 
     Replicates the canonical NIST -> MNIST preprocessing pipeline:
@@ -199,7 +199,7 @@ def preprocess_pil_image(
             if max_val > 0.0:
                 resized = (resized / max_val) * 255.0
 
-            canvas_28 = np.zeros((28, 28), dtype=np.float32)
+            canvas_28: np.ndarray[Any, np.dtype[np.float32]] = np.zeros((28, 28), dtype=np.float32)
             y0 = (28 - new_h) // 2
             x0 = (28 - new_w) // 2
             canvas_28[y0 : y0 + new_h, x0 : x0 + new_w] = resized
@@ -220,9 +220,7 @@ def preprocess_pil_image(
         )
         canvas_28 = np.asarray(resized_pil, dtype=np.float32)
 
-    unit_np: np.ndarray[tuple[int, int], np.dtype[np.float32]] = (canvas_28 / 255.0).astype(
-        np.float32
-    )
+    unit_np: np.ndarray[Any, np.dtype[np.float32]] = (canvas_28 / 255.0).astype(np.float32)
     norm_np = (unit_np - float(mean)) / float(std)
     tensor = torch.from_numpy(norm_np).to(torch.float32).unsqueeze(0).unsqueeze(0)
     return tensor, unit_np
@@ -373,7 +371,7 @@ def predict_tensor(
     top_conf, top_idx = probs.max(dim=0)
 
     raw_slice = image_tensor[0, 0].detach().cpu().numpy()
-    display_img: np.ndarray[tuple[int, int], np.dtype[np.float32]] = np.clip(
+    display_img: np.ndarray[Any, np.dtype[np.float32]] = np.clip(
         raw_slice * float(std) + float(mean), 0.0, 1.0
     ).astype(np.float32)
 
