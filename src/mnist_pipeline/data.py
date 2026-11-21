@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import logging
 import random
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -305,6 +307,68 @@ def validate_batch_contract(
         )
 
 
+MNIST_RESOURCES: list[str] = [
+    "train-images-idx3-ubyte.gz",
+    "train-labels-idx1-ubyte.gz",
+    "t10k-images-idx3-ubyte.gz",
+    "t10k-labels-idx1-ubyte.gz",
+]
+
+MNIST_MIRRORS: list[str] = [
+    "https://ossci-datasets.s3.amazonaws.com/mnist/",
+    "https://storage.googleapis.com/cvdf-datasets/mnist/",
+]
+
+
+def ensure_mnist_raw_downloaded(raw_dir: Path) -> bool:
+    """Ensure raw MNIST dataset files are downloaded from reliable HTTPS mirrors.
+
+    Bypasses broken/legacy HTTP mirrors (e.g. yann.lecun.com) by fetching from AWS S3
+    or Google Cloud Storage (CVDF) mirrors directly with standard headers and decompressing.
+
+    Args:
+        raw_dir: Root directory for raw datasets (expects raw_dir / "MNIST" / "raw").
+
+    Returns:
+        True if all raw files exist or were successfully downloaded; False otherwise.
+    """
+    raw_folder = raw_dir / "MNIST" / "raw"
+    raw_folder.mkdir(parents=True, exist_ok=True)
+
+    all_exist = all((raw_folder / fname.replace(".gz", "")).exists() for fname in MNIST_RESOURCES)
+    if all_exist:
+        return True
+
+    headers = {"User-Agent": "torchvision/mnist-lab"}
+    for fname in MNIST_RESOURCES:
+        target_uncompressed = raw_folder / fname.replace(".gz", "")
+        target_compressed = raw_folder / fname
+        if target_uncompressed.exists():
+            continue
+
+        downloaded = False
+        for mirror in MNIST_MIRRORS:
+            url = f"{mirror}{fname}"
+            try:
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    compressed_bytes = resp.read()
+                    target_compressed.write_bytes(compressed_bytes)
+                    uncompressed_bytes = gzip.decompress(compressed_bytes)
+                    target_uncompressed.write_bytes(uncompressed_bytes)
+                downloaded = True
+                logger.info("Successfully fetched %s from %s", fname, mirror)
+                break
+            except Exception as exc:
+                logger.debug("Failed downloading %s from %s: %s", fname, mirror, exc)
+
+        if not downloaded:
+            logger.warning("Could not download raw MNIST file '%s' from available mirrors.", fname)
+            return False
+
+    return True
+
+
 def preprocess_mnist_data(cfg: DataConfig) -> dict[str, Any]:
     """Download, normalize, deterministically split, and persist MNIST tensors to disk.
 
@@ -319,8 +383,14 @@ def preprocess_mnist_data(cfg: DataConfig) -> dict[str, Any]:
     raw_dir.mkdir(parents=True, exist_ok=True)
     processed_dir.mkdir(parents=True, exist_ok=True)
 
+    # Patch torchvision MNIST mirrors to use reliable HTTPS endpoints
+    datasets.MNIST.mirrors = list(MNIST_MIRRORS)
+
     source_type = "torchvision.datasets.MNIST"
     try:
+        if cfg.download:
+            ensure_mnist_raw_downloaded(raw_dir)
+
         train_ds = datasets.MNIST(root=str(raw_dir), train=True, download=cfg.download)
         test_ds = datasets.MNIST(root=str(raw_dir), train=False, download=cfg.download)
         full_train_images = normalize_uint8_images(train_ds.data, mean=cfg.mean, std=cfg.std)
@@ -330,7 +400,11 @@ def preprocess_mnist_data(cfg: DataConfig) -> dict[str, Any]:
     except Exception as exc:
         if not cfg.allow_synthetic_fallback:
             raise RuntimeError(
-                f"Failed to load or download MNIST dataset in '{raw_dir}': {exc}"
+                f"Failed to load or download MNIST dataset in '{raw_dir}': {exc}\n"
+                "Tip: If running in an offline or air-gapped environment without internet access, "
+                "you can enable synthetic data generation via:\n"
+                '  make data ARGS="data.allow_synthetic_fallback=true"\n'
+                "or by setting 'data.allow_synthetic_fallback=true' in your configuration."
             ) from exc
         logger.warning(
             "MNIST download unavailable (%s); falling back to deterministic synthetic dataset.",

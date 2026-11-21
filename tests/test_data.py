@@ -113,3 +113,26 @@ def test_build_dataloaders_with_augmentation(tmp_path: Path) -> None:
     assert batch_images.shape == (16, 1, 28, 28)
     assert batch_images.dtype == torch.float32
     assert torch.isfinite(batch_images).all()
+
+
+def test_ensure_mnist_raw_downloaded(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify raw MNIST download caching and error handling."""
+    from mnist_pipeline.data import MNIST_RESOURCES, ensure_mnist_raw_downloaded
+
+    raw_folder = tmp_path / "MNIST" / "raw"
+    raw_folder.mkdir(parents=True)
+
+    # 1. When files are already present, skips downloading
+    for fname in MNIST_RESOURCES:
+        target = raw_folder / fname.replace(".gz", "")
+        target.write_bytes(b"dummy")
+
+    assert ensure_mnist_raw_downloaded(tmp_path) is True
+
+    # 2. When files are missing and network fails, returns False
+    empty_raw = tmp_path / "empty_dir"
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("Simulated network down")),
+    )
+    assert ensure_mnist_raw_downloaded(empty_raw) is False
