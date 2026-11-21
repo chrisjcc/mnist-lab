@@ -315,6 +315,7 @@ MNIST_RESOURCES: list[str] = [
 ]
 
 MNIST_MIRRORS: list[str] = [
+    "https://huggingface.co/datasets/chrisjcc/mnist-dataset/resolve/main/raw/",
     "https://ossci-datasets.s3.amazonaws.com/mnist/",
     "https://storage.googleapis.com/cvdf-datasets/mnist/",
 ]
@@ -323,8 +324,8 @@ MNIST_MIRRORS: list[str] = [
 def ensure_mnist_raw_downloaded(raw_dir: Path) -> bool:
     """Ensure raw MNIST dataset files are downloaded from reliable HTTPS mirrors.
 
-    Bypasses broken/legacy HTTP mirrors (e.g. yann.lecun.com) by fetching from AWS S3
-    or Google Cloud Storage (CVDF) mirrors directly with standard headers and decompressing.
+    Bypasses broken/legacy HTTP mirrors (e.g. yann.lecun.com) by fetching from Hugging Face Hub,
+    AWS S3, or Google Cloud Storage (CVDF) mirrors directly with standard headers and decompressing.
 
     Args:
         raw_dir: Root directory for raw datasets (expects raw_dir / "MNIST" / "raw").
@@ -361,6 +362,25 @@ def ensure_mnist_raw_downloaded(raw_dir: Path) -> bool:
                 break
             except Exception as exc:
                 logger.debug("Failed downloading %s from %s: %s", fname, mirror, exc)
+
+        if not downloaded:
+            # Fallback to huggingface_hub client if available
+            try:
+                from huggingface_hub import hf_hub_download
+
+                downloaded_file = hf_hub_download(
+                    repo_id="chrisjcc/mnist-dataset",
+                    repo_type="dataset",
+                    filename=f"raw/{fname}",
+                )
+                compressed_bytes = Path(downloaded_file).read_bytes()
+                target_compressed.write_bytes(compressed_bytes)
+                uncompressed_bytes = gzip.decompress(compressed_bytes)
+                target_uncompressed.write_bytes(uncompressed_bytes)
+                downloaded = True
+                logger.info("Successfully fetched %s via huggingface_hub client", fname)
+            except Exception as hf_exc:
+                logger.debug("Failed downloading %s via huggingface_hub client: %s", fname, hf_exc)
 
         if not downloaded:
             logger.warning("Could not download raw MNIST file '%s' from available mirrors.", fname)

@@ -135,4 +135,11 @@ def test_ensure_mnist_raw_downloaded(tmp_path: Path, monkeypatch: pytest.MonkeyP
         "urllib.request.urlopen",
         lambda *args, **kwargs: (_ for _ in ()).throw(OSError("Simulated network down")),
     )
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OSError("Simulated HF down")),
+    )
     assert ensure_mnist_raw_downloaded(empty_raw) is False

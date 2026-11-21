@@ -8,7 +8,7 @@ batch_size: ${param:data.batch_size, 128}
 num_workers: 0
 pin_memory: false
 seed: ${param:data.seed, 42}
-allow_synthetic_fallback: false
+allow_synthetic_fallback: true
 num_synthetic_train: 600
 num_synthetic_test: 100
 
