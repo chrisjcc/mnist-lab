@@ -153,5 +153,6 @@ All pipeline operations, training tasks, evaluation benchmarks, and deployment w
 - [**MVE Baseline Study (`docs/experiments/mve_baseline_study.md`)**](docs/experiments/mve_baseline_study.md): Reproducible baseline instructions, acceptance gate adjudication, training curves, and test evaluation/benchmark tables.
 - [**Model Card (`docs/model_card.md`)**](docs/model_card.md): Architecture details, training hyperparameters, per-class evaluation metrics, and latency benchmarks.
 - [**Dataset Card (`docs/dataset_card.md`)**](docs/dataset_card.md): Dataset provenance, normalization formula, and stratified class distribution across splits.
+- [**AWS Compute & Distributed Training Guide (`docs/aws_compute_and_distributed_training_guide.md`)**](docs/aws_compute_and_distributed_training_guide.md): Architectural analysis of interactive cloud compute, Slurm/Condor equivalents on AWS, and scaling to distributed PyTorch DDP.
 - [**Implementation Plan (`docs/mnist_pytorch_pipeline_implementation_plan.md`)**](docs/mnist_pytorch_pipeline_implementation_plan.md): Complete architectural specification and design blueprint.
 

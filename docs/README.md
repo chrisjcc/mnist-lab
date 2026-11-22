@@ -17,6 +17,7 @@ Welcome to the documentation hub for **MNIST Lab**, a production-grade, reproduc
 | **Sweep Study** | [`experiments/sweep_study.md`](experiments/sweep_study.md) | Bayesian hyperparameter search study (`c6dont3r`), Hyperband early stopping & champion analysis |
 | **Architecture Comparison** | [`experiments/cnn_vs_transformer_study.md`](experiments/cnn_vs_transformer_study.md) | Head-to-head empirical comparison study: CNN (`MNISTConvNet`) vs. Vision Transformer (`MNISTViT`) |
 | **Research & Feasibility** | [`research/transformer_mnist_feasibility_study.md`](research/transformer_mnist_feasibility_study.md) | Vision Transformer (ViT) vs. CNN comparative feasibility study & integration blueprint |
+| **Cloud & Distributed Training** | [`aws_compute_and_distributed_training_guide.md`](aws_compute_and_distributed_training_guide.md) | AWS compute architectures, Slurm/Condor equivalents (ParallelCluster/Batch), and PyTorch DDP scaling |
 
 ---
 
