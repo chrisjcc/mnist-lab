@@ -99,11 +99,11 @@ Instead of managing a standing cluster, training compute is treated as **ephemer
   ┌────────────────────────────────────────────────────────────────────────┐
   │                   Ephemeral Multi-Node Cluster                         │
   │                                                                        │
-  │   Node 0 (Rank 0) [8x A100]  ◄─── Elastic Fabric Adapter ───►  Node 1   │
+  │   Node 0 (Rank 0) [8x A100]  ◄─── Elastic Fabric Adapter ───►  Node 1  │
   │            ▲                                (EFA)               ▲      │
   │            │                                                    │      │
   │            ▼                                                    ▼      │
-  │   Node 2 (Rank 2) [8x A100]  ◄──────────────────────────────►  Node 3   │
+  │   Node 2 (Rank 2) [8x A100]  ◄──────────────────────────────►  Node 3  │
   └────────────────────────────────────────────────────────────────────────┘
                                       │
                                       │ 2. Real-time telemetry to W&B
