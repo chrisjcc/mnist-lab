@@ -86,33 +86,61 @@ make app
 
 ## 🛠️ Makefile Command Reference
 
+All pipeline operations, training tasks, evaluation benchmarks, and deployment workflows are orchestrated via `make`. Run `make help` to inspect available options in your terminal.
+
+### 1. Environment & Code Quality
 | Command | Description |
 | :--- | :--- |
-| `make setup` | Install all runtime and development dependencies into the active Python environment |
-| `make data` | Download MNIST and persist stratified `train.pt`, `val.pt`, `test.pt`, and `split_metadata.json` |
-| `make train` | Train `MNISTConvNet` using Hydra config (`ARGS="..."` for CLI overrides) |
-| `make evaluate` | Evaluate `checkpoint_best.pt` on the 10,000 held-out test set |
-| `make benchmark` | Benchmark latency (`p50`, `p95`, `p99`) and throughput across batch sizes `[1, 32, 128]` |
-| `make report` | Generate training curves, confusion matrix, sample predictions, and Hub cards |
-| `make compare-models` | Systematically compare CNN vs. ViT metrics and compile Markdown comparison study |
-| `make evaluate-mve` | Verify all 5 Minimum Viable Experiment (MVE) acceptance criteria gates |
-| `make smoke-eval` | Execute sub-second synthetic tensor contract and gradient flow verification |
-| `make sweep` | Initialize and run W&B Bayesian hyperparameter sweep (`COUNT=5`) |
-| `make sweep-smoke` | Execute fast local 1-epoch sweep trial smoke test |
-| `make sweep-report` | Generate local Markdown sweep report and ranked leaderboard (`SWEEP_ID=...`) |
-| `make sweep-promote` | Promote best sweep model, export SafeTensors, update `params.yaml`, and re-evaluate |
-| `make sweep-publish-hf` | Promote best sweep model and release weights and model card to Hugging Face Hub |
-| `make dvc-repro` | Reproduce the full 5-stage DVC pipeline (`dvc.yaml`) |
-| `make hf-upload` | Stage and upload model weights, metrics, plots, and cards to Hugging Face Hub |
-| `make hf-infer` | Load model from Hugging Face Hub (or local fallback) and run CLI digit inference |
-| `make publish-hf-release` | Publish verified production model weights & cards to Hugging Face Hub |
-| `make app` | Launch the interactive Streamlit digit classifier on `http://localhost:8501` |
-| `make docker-build` | Build the Hugging Face Docker Space image locally |
-| `make docker-run` | Run the Hugging Face Docker Space container on port `8501` |
-| `make lint` | Run `ruff check`, `ruff format --check`, and `mypy src/` (strict mode) |
-| `make test` | Run the full `pytest` unit and integration test suite |
+| `make setup` | Install `requirements.txt` and editable package (`pip install -e .`) |
+| `make install` | Install all project dependencies (training, development, UI) |
+| `make install-dev` | Install minimal development dependencies only |
+| `make lint` | Run `ruff check`, `ruff format --check`, and strict `mypy src/` |
+| `make format` | Auto-format codebase via `ruff format` |
+| `make test` | Execute full `pytest` unit and integration test suite |
+| `make clean` | Remove build caches, bytecode (`__pycache__`), and temporary test files |
 
-> 💡 **Full Command Reference**: Run `make help` in your terminal to view all operational commands, convenience aliases, and default parameters.
+### 2. Data & Pipeline Versioning (DVC)
+| Command | Description |
+| :--- | :--- |
+| `make data` | Download and preprocess MNIST dataset into stratified splits (`54k / 6k / 10k`) |
+| `make preprocess` | Alias for `make data` |
+| `make pipeline` | Reproduce full 5-stage DVC pipeline DAG (`dvc repro`) |
+| `make dvc-repro` | Alias for `make pipeline` |
+
+### 3. Model Training, Evaluation, Benchmarking & Reporting
+| Command | Description |
+| :--- | :--- |
+| `make train` | Train model using Hydra configuration (`ARGS="..."` for overrides, e.g. `model=cnn` or `model=transformer`) |
+| `make evaluate` | Evaluate best checkpoint on the 10,000 held-out test set |
+| `make benchmark` | Run inference latency (`p50`, `p95`, `p99`) and throughput benchmarks across batch sizes |
+| `make report` | Generate training curves, confusion matrix, sample predictions, and HF cards |
+| `make compare-models` | Systematically compare CNN vs. ViT metrics and compile comparison report |
+| `make smoke-eval` | Execute fast (< 2.0s) zero-budget CI smoke check with synthetic data |
+| `make evaluate-mve` | Adjudicate all 5 Minimum Viable Experiment (MVE) acceptance criteria gates |
+
+### 4. Hyperparameter Optimization (W&B Sweeps)
+| Command | Description |
+| :--- | :--- |
+| `make sweep` | Initialize and run W&B Bayesian hyperparameter sweep |
+| `make sweep-smoke` | Run fast local 1-epoch sweep trial smoke test |
+| `make sweep-report` | Generate local Markdown sweep report and ranked leaderboard |
+| `make sweep-promote` | Promote champion sweep model, export SafeTensors, update `params.yaml`, and re-evaluate |
+| `make sweep-publish-hf` | Promote best sweep model and release weights and model card to Hugging Face Hub |
+
+### 5. Hugging Face Hub Integration
+| Command | Description |
+| :--- | :--- |
+| `make generate-hf-cards` | Generate Model Card & Dataset Card locally without uploading (`--card-only`) |
+| `make hf-upload` | Stage and upload model weights, metrics, plots, and cards to Hugging Face Hub |
+| `make hf-inference` | Download model from Hugging Face Hub (or local fallback) and run CLI digit inference (alias: `make hf-infer`) |
+| `make publish-hf-release` | Publish verified production model weights, dataset card, and model cards to Hugging Face Hub |
+
+### 6. Interactive Demo App & Docker Space
+| Command | Description |
+| :--- | :--- |
+| `make app-run` | Launch local interactive Streamlit demo UI on `http://localhost:8501` (aliases: `make app`, `make run-app`) |
+| `make docker-build` | Build the Hugging Face Docker Space container image |
+| `make docker-run` | Run the Hugging Face Docker Space container locally on port `8501` |
 
 ---
 
