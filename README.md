@@ -105,11 +105,14 @@ make app
 | `make dvc-repro` | Reproduce the full 5-stage DVC pipeline (`dvc.yaml`) |
 | `make hf-upload` | Stage and upload model weights, metrics, plots, and cards to Hugging Face Hub |
 | `make hf-infer` | Load model from Hugging Face Hub (or local fallback) and run CLI digit inference |
+| `make publish-hf-release` | Publish verified production model weights & cards to Hugging Face Hub |
 | `make app` | Launch the interactive Streamlit digit classifier on `http://localhost:8501` |
 | `make docker-build` | Build the Hugging Face Docker Space image locally |
 | `make docker-run` | Run the Hugging Face Docker Space container on port `8501` |
 | `make lint` | Run `ruff check`, `ruff format --check`, and `mypy src/` (strict mode) |
 | `make test` | Run the full `pytest` unit and integration test suite |
+
+> 💡 **Full Command Reference**: Run `make help` in your terminal to view all operational commands, convenience aliases, and default parameters.
 
 ---
 
