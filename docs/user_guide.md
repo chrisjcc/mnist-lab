@@ -41,7 +41,7 @@ cd mnist-lab
 ```bash
 conda create -n mnist-lab python=3.11 -y
 conda activate mnist-lab
-make setup
+make install
 ```
 
 **Option B (Python `venv`)**:
@@ -49,20 +49,25 @@ make setup
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-make setup
+make install
 ```
 
 > **Note**: The [`Makefile`](../Makefile) automatically detects an active Conda environment (`CONDA_PREFIX`) or a local `.venv` directory.
 >
-> **DVC Status**: DVC is already initialized in this repository (the `.dvc/` configuration directory and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once `make setup` finishes, you can immediately run `make dvc-repro` (or `dvc repro`).
+> **DVC Status**: DVC is already initialized in this repository (the `.dvc/` configuration directory and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once `make install` finishes, you can immediately run `make dvc-repro` (or `dvc repro`).
 
-What `make setup` executes under the hood:
+What `make install` executes under the hood:
 
 ```bash
 pip install --upgrade pip
-pip install -r requirements.txt
 pip install -e ".[all]"
 ```
+
+For lightweight or targeted environments, modular install targets are available:
+* `make install`: Full suite (training + development + UI)
+* `make install-dev`: Testing and code quality tools only (`.[dev]`)
+* `make install-training`: Core modeling, training loop, and W&B only (`.[training]`)
+* `make install-ui`: Streamlit interactive demo dependencies only (`.[ui]`)
 
 ### Step 1.3: Configure Optional Environment Variables
 

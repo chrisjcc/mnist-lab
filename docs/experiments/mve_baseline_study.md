@@ -27,7 +27,7 @@ The objective of this Minimum Viable Experiment (MVE) is to establish a **determ
 # 1. Create and activate Conda environment (or .venv) and install pinned dependencies
 conda create -n mnist-lab python=3.11 -y
 conda activate mnist-lab
-make setup
+make install
 
 # 2. Run zero-budget synthetic smoke check (< 1 second)
 make smoke-eval

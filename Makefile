@@ -36,7 +36,7 @@ MODEL_REPO ?= chrisjcc/mnist-cnn
 DATASET_REPO ?= chrisjcc/mnist-dataset
 
 .PHONY: help \
-        setup install install-dev lint format test setup-hooks clean \
+        install install-dev install-training install-ui lint format test setup-hooks clean \
         data preprocess dvc-repro pipeline \
         train evaluate benchmark report compare-models \
         smoke-eval evaluate-mve \
@@ -54,9 +54,10 @@ help:
 	@echo "                        MNIST-Lab Operational Commands                          "
 	@echo "================================================================================"
 	@echo "Environment & Code Quality:"
-	@echo "  make setup                    Install requirements.txt and editable package"
 	@echo "  make install                  Install all project dependencies (training, dev, UI)"
-	@echo "  make install-dev              Install minimal development dependencies only"
+	@echo "  make install-dev              Install development and test dependencies only"
+	@echo "  make install-training         Install core model training dependencies only"
+	@echo "  make install-ui               Install Streamlit demo UI dependencies only"
 	@echo "  make lint                     Run ruff linter, format check, and mypy type check"
 	@echo "  make format                   Auto-format codebase via ruff"
 	@echo "  make test                     Execute pytest unit and integration test suite"
@@ -101,11 +102,6 @@ help:
 # 1. Environment & Code Quality
 # ------------------------------------------------------------
 
-setup:
-	$(PIP) install --upgrade pip
-	$(PIP) install -r requirements.txt
-	$(PIP) install -e ".[all]"
-
 install:
 	$(PIP) install --upgrade pip
 	$(PIP) install -e ".[all]"
@@ -113,6 +109,14 @@ install:
 install-dev:
 	$(PIP) install --upgrade pip
 	$(PIP) install -e ".[dev]"
+
+install-training:
+	$(PIP) install --upgrade pip
+	$(PIP) install -e ".[training]"
+
+install-ui:
+	$(PIP) install --upgrade pip
+	$(PIP) install -e ".[ui]"
 
 lint:
 	$(RUFF) check src/ scripts/ tests/ app/

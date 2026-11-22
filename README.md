@@ -56,13 +56,13 @@ To run the full suite of capabilities coded in this repository (tracking experim
 ## 🚀 Quickstart
 
 > [!NOTE]
-> **DVC is already initialized** in this repository (`.dvc/` configuration and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once dependencies are installed via `make setup`, you can immediately run `make dvc-repro` (or `dvc repro`) to reproduce or verify stages.
+> **DVC is already initialized** in this repository (`.dvc/` configuration and `.dvcignore` are tracked in Git). You do **not** need to run `dvc init` when cloning. Once dependencies are installed via `make install`, you can immediately run `make dvc-repro` (or `dvc repro`) to reproduce or verify stages.
 
 ```bash
 # 1. Create and activate a Conda environment (or Python venv) and install dependencies
 conda create -n mnist-lab python=3.11 -y
 conda activate mnist-lab
-make setup
+make install
 
 # 2. Run zero-budget synthetic smoke check (< 1s)
 make smoke-eval
@@ -91,9 +91,10 @@ All pipeline operations, training tasks, evaluation benchmarks, and deployment w
 ### 1. Environment & Code Quality
 | Command | Description |
 | :--- | :--- |
-| `make setup` | Install `requirements.txt` and editable package (`pip install -e .`) |
-| `make install` | Install all project dependencies (training, development, UI) |
-| `make install-dev` | Install minimal development dependencies only |
+| `make install` | Install all project dependencies (training, development, UI) via `pip install -e ".[all]"` |
+| `make install-dev` | Install development and test dependencies only via `pip install -e ".[dev]"` |
+| `make install-training` | Install core model training dependencies only via `pip install -e ".[training]"` |
+| `make install-ui` | Install Streamlit demo UI dependencies only via `pip install -e ".[ui]"` |
 | `make lint` | Run `ruff check`, `ruff format --check`, and strict `mypy src/` |
 | `make format` | Auto-format codebase via `ruff format` |
 | `make test` | Execute full `pytest` unit and integration test suite |
